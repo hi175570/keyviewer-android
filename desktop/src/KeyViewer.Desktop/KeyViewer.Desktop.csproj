@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>KeyViewer.Desktop</AssemblyName>
+    <RootNamespace>KeyViewer.Desktop</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="Exists('Assets\KeyViewer.ico')">Assets\KeyViewer.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
+    <ProjectReference Include="..\KeyViewer.UI\KeyViewer.UI.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\app\src\main\res\mipmap-xxxhdpi\ic_launcher.png"
+                      Link="Assets\icon.png"
+                      LogicalName="KeyViewer.Desktop.Assets.icon.png" />
+  </ItemGroup>
+</Project>

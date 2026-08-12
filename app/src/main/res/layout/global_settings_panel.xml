@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:elevation="8dp"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 标题行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="全局设置"
+                android:textSize="18sp"
+                android:textColor="#333"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/closeGlobalSettingsBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="✕"
+                android:textSize="18sp"
+                android:background="@android:color/transparent"
+                android:textColor="#666" />
+
+        </LinearLayout>
+
+        <!-- ===== 深色模式切换 ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="深色模式"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="8dp" />
+
+        <FrameLayout
+            android:id="@+id/darkModeContainer"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="20dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/bg_dark_mode_track">
+
+            <View
+                android:id="@+id/darkModeSlider"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_gravity="start"
+                android:background="@drawable/bg_dark_mode_slider" />
+
+            <ImageView
+                android:id="@+id/sunIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_sun"
+                app:tint="#757575" />
+
+            <ImageView
+                android:id="@+id/moonIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical|end"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_moon"
+                app:tint="#757575" />
+
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/background_image_title"
+            android:textColor="#666666"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/backgroundImageBtn"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/background_image_choose"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/clearBackgroundImageBtn"
+                android:layout_width="72dp"
+                android:layout_height="48dp"
+                android:text="@string/background_image_clear"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:text="@string/background_image_description"
+            android:textColor="#777777"
+            android:textSize="12sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/keyDebounceSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/key_debounce_title"
+            android:textColor="#333333"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/key_debounce_description"
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:layout_marginBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <EditText
+                android:id="@+id/keyDebounceMillisInput"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:inputType="number"
+                android:importantForAutofill="no"
+                android:imeOptions="actionDone"
+                android:maxLength="3"
+                android:hint="@string/key_debounce_default_millis"
+                android:gravity="center"
+                android:background="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/key_debounce_millis_suffix"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/keyRestrictionSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/key_restriction_title"
+            android:textColor="#333333"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/key_restriction_description"
+            android:textColor="#777777"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/keyRestrictionBlockedKeysInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#FFFFFF"
+            android:hint="@string/key_restriction_blocked_keys_hint"
+            android:importantForAutofill="no"
+            android:imeOptions="actionDone"
+            android:inputType="textNoSuggestions"
+            android:maxLength="2048"
+            android:padding="8dp"
+            android:singleLine="true"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:text="@string/key_restriction_blocked_keys_help"
+            android:textColor="#777777"
+            android:textSize="12sp" />
+
+        <!-- ===== 悬浮窗缩放 ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="悬浮窗缩放"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <Button
+                android:id="@+id/floatScaleDownBtn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="-"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/floatScaleText"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="100%"
+                android:textSize="16sp"
+                android:textColor="#333"
+                android:gravity="center" />
+
+            <Button
+                android:id="@+id/floatScaleUpBtn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="+"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+
+        <!-- ===== 键雨最大高度 ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="键雨最大高度"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/rainHeightInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:inputType="number"
+            android:text="200"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:background="#FFF"
+            android:layout_marginBottom="12dp"
+            android:imeOptions="actionDone" />
+
+        <!-- ===== 键雨预留高度 ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="键雨预留高度"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/rainReserveHeightInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:inputType="number"
+            android:text="10"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:background="#FFF"
+            android:layout_marginBottom="20dp"
+            android:imeOptions="actionDone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="键雨圆角半径（0 = 直角）"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/rainCornerRadiusInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:inputType="numberDecimal"
+            android:text="4"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:background="#FFF"
+            android:layout_marginBottom="20dp"
+            android:imeOptions="actionDone" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDD"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 按键计数归零 -->
+        <Button
+            android:id="@+id/resetCountsBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="重置所有按键计数"
+            android:textSize="14sp"
+            android:backgroundTint="#F44336"
+            android:textColor="#FFF"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="将按键计数归零（KPS/TOTAL 不受影响）"
+            android:textSize="12sp"
+            android:textColor="#999"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDD"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 悬浮窗位置重置 -->
+        <Button
+            android:id="@+id/resetFloatPositionBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="重置悬浮窗位置"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDD"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 键盘校准 -->
+        <Button
+            android:id="@+id/calibrateKeyboardBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="校准键盘设备"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDD"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 导入导出配置 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="配置管理"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <Button
+                android:id="@+id/exportConfigBtn"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="导出配置"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/importConfigBtn"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="导入配置"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="恢复当前配置为预设"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/presetSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+
+        <Button
+            android:id="@+id/restorePresetBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="恢复预设（覆盖当前配置）"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>KeyViewer.BepInExBridge</AssemblyName>
+    <RootNamespace>KeyViewer.BepInExBridge</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BepInEx.NET.Common" Version="6.0.0-be.785" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

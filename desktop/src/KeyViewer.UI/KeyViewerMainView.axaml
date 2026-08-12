@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KeyViewer.UI.Controls"
+        x:Class="KeyViewer.UI.KeyViewerMainView"
+        Background="#01000000">
+  <UserControl.Resources>
+    <StreamGeometry x:Key="IconAdd">M19,13 H13 V19 H11 V13 H5 V11 H11 V5 H13 V11 H19 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconDelete">M6,19 C6,20.1 6.9,21 8,21 H16 C17.1,21 18,20.1 18,19 V7 H6 Z M19,4 H15.5 L14.5,3 H9.5 L8.5,4 H5 V6 H19 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconCopy">M16,1 H4 C2.9,1 2,1.9 2,3 V17 H4 V3 H16 Z M19,5 H8 C6.9,5 6,5.9 6,7 V21 C6,22.1 6.9,23 8,23 H19 C20.1,23 21,22.1 21,21 V7 C21,5.9 20.1,5 19,5 Z M19,21 H8 V7 H19 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconPaste">M19,2 H14.82 C14.4,0.84 13.3,0 12,0 C10.7,0 9.6,0.84 9.18,2 H5 C3.9,2 3,2.9 3,4 V20 C3,21.1 3.9,22 5,22 H19 C20.1,22 21,21.1 21,20 V4 C21,2.9 20.1,2 19,2 Z M12,2 C12.55,2 13,2.45 13,3 C13,3.55 12.55,4 12,4 C11.45,4 11,3.55 11,3 C11,2.45 11.45,2 12,2 Z M19,20 H5 V4 H7 V7 H17 V4 H19 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconBatch">M3,17 V19 H9 V17 Z M3,5 V7 H13 V5 Z M13,21 V19 H21 V17 H13 V15 H11 V21 Z M7,9 V11 H3 V13 H7 V15 H9 V9 Z M21,13 V11 H11 V13 Z M15,9 H17 V7 H15 Z M19,9 H21 V7 H19 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconCheck">M9,16.17 L4.83,12 3.41,13.41 9,19 21,7 19.59,5.59 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconClose">M19,6.41 L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconSettings">M19.14,12.94 C19.18,12.64 19.2,12.33 19.2,12 C19.2,11.67 19.18,11.36 19.14,11.06 L21.16,9.48 C21.34,9.34 21.39,9.07 21.28,8.87 L19.36,5.55 C19.24,5.33 18.99,5.26 18.77,5.33 L16.38,6.29 C15.88,5.91 15.32,5.6 14.72,5.38 L14.45,3 C14.41,2.76 14.21,2.59 13.97,2.59 H10.13 C9.89,2.59 9.7,2.76 9.66,3 L9.39,5.34 C8.79,5.56 8.23,5.87 7.73,6.25 L5.34,5.29 C5.12,5.22 4.87,5.29 4.75,5.51 L2.83,8.83 C2.72,9.03 2.77,9.3 2.95,9.44 L4.97,11.02 C4.93,11.32 4.91,11.63 4.91,11.96 C4.91,12.29 4.93,12.6 4.97,12.9 L2.95,14.48 C2.77,14.62 2.72,14.89 2.83,15.09 L4.75,18.41 C4.87,18.63 5.12,18.7 5.34,18.63 L7.73,17.67 C8.23,18.05 8.79,18.36 9.39,18.58 L9.66,20.92 C9.7,21.16 9.9,21.33 10.14,21.33 H13.98 C14.22,21.33 14.41,21.16 14.45,20.92 L14.72,18.58 C15.32,18.36 15.88,18.05 16.38,17.67 L18.77,18.63 C18.99,18.7 19.24,18.63 19.36,18.41 L21.28,15.09 C21.39,14.89 21.34,14.62 21.16,14.48 Z M12,15.6 C10.02,15.6 8.4,13.98 8.4,12 C8.4,10.02 10.02,8.4 12,8.4 C13.98,8.4 15.6,10.02 15.6,12 C15.6,13.98 13.98,15.6 12,15.6 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconLayers">M12,2 L2,7 12,12 22,7 Z M2,17 L12,22 22,17 M2,12 L12,17 22,12</StreamGeometry>
+    <StreamGeometry x:Key="IconConfig">M4,6 H20 V8 H4 Z M4,10 H20 V12 H4 Z M4,14 H20 V16 H4 Z M4,18 H20 V20 H4 Z M17,11 L19,13 17,15 Z M19,17 L21,19 19,21 Z</StreamGeometry>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="Button.pill">
+      <Setter Property="Width" Value="60" />
+      <Setter Property="Height" Value="64" />
+      <Setter Property="FontSize" Value="30" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.square">
+      <Setter Property="Width" Value="64" />
+      <Setter Property="Height" Value="64" />
+      <Setter Property="FontSize" Value="30" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="#B3333333" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.action">
+      <Setter Property="Height" Value="54" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Background="#01000000">
+    <controls:KeyCanvasControl x:Name="KeyCanvas" />
+
+    <Grid Height="38"
+          VerticalAlignment="Top"
+          Background="#1976D2"
+          ColumnDefinitions="Auto,*">
+      <TextBlock Text="KEYVIEWER"
+                 FontSize="15"
+                 FontWeight="Bold"
+                 Foreground="White"
+                 VerticalAlignment="Center"
+                 Margin="16,0" />
+      <TextBlock x:Name="StatusText"
+                 Grid.Column="1"
+                 Foreground="White"
+                 FontSize="13"
+                 VerticalAlignment="Center"
+                 HorizontalAlignment="Right"
+                 Margin="8,0" />
+    </Grid>
+
+    <Border HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="18,54,0,0"
+            CornerRadius="12"
+            Background="#B3333333">
+      <StackPanel Orientation="Horizontal" Spacing="0">
+        <Button x:Name="ZoomOutButton" Classes="pill" Content="−" />
+        <Border Width="1" Height="46" Background="#66FFFFFF" VerticalAlignment="Center" />
+        <Button x:Name="ZoomResetButton" Classes="pill" Content="=" />
+        <Border Width="1" Height="46" Background="#66FFFFFF" VerticalAlignment="Center" />
+        <Button x:Name="ZoomInButton" Classes="pill" Content="+" />
+      </StackPanel>
+    </Border>
+
+    <StackPanel HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,54,18,0"
+                Spacing="10">
+      <Button x:Name="GlobalSettingsButton" Classes="square" ToolTip.Tip="全局设置"><PathIcon Data="{StaticResource IconSettings}" Width="32" Height="32" Foreground="White" /></Button>
+      <Button x:Name="LayersButton" Classes="square" ToolTip.Tip="图层管理"><PathIcon Data="{StaticResource IconLayers}" Width="32" Height="32" Foreground="White" /></Button>
+      <Button x:Name="ConfigManagerButton" Classes="square" ToolTip.Tip="配置管理"><PathIcon Data="{StaticResource IconConfig}" Width="32" Height="32" Foreground="White" /></Button>
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Margin="18,0,0,18"
+                Spacing="10">
+      <Button x:Name="OverlayButton" Classes="action" Width="120" Background="#4CAF50" Content="开启悬浮窗" />
+      <Button x:Name="ListenButton" Classes="action" Width="110" Background="#FF9800" Content="监听中" />
+      <Button x:Name="InputSourcesButton" Classes="action" Width="105" Background="#FF9800" Content="输入来源" />
+    </StackPanel>
+
+    <Border x:Name="NormalEditToolbar"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Margin="0,0,0,18"
+            CornerRadius="32"
+            Background="#D9212121">
+      <StackPanel Orientation="Horizontal" Spacing="0">
+        <Button x:Name="AddKeyButton" Classes="pill" ToolTip.Tip="添加按键"><PathIcon Data="{StaticResource IconAdd}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="DeleteKeyButton" Classes="pill" ToolTip.Tip="删除选中"><PathIcon Data="{StaticResource IconDelete}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="CopyButton" Classes="pill" ToolTip.Tip="复制选中"><PathIcon Data="{StaticResource IconCopy}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="PasteButton" Classes="pill" ToolTip.Tip="粘贴"><PathIcon Data="{StaticResource IconPaste}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="SelectAllButton" Classes="pill" ToolTip.Tip="全选按键" IsVisible="False" Content="全" />
+        <Button x:Name="BatchPropertiesButton" Classes="pill" ToolTip.Tip="批量设置" IsVisible="False"><PathIcon Data="{StaticResource IconSettings}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="BatchEditButton" Classes="pill" ToolTip.Tip="批量编辑"><PathIcon Data="{StaticResource IconBatch}" Width="30" Height="30" Foreground="White" /></Button>
+      </StackPanel>
+    </Border>
+
+    <Border x:Name="PasteToolbar"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Margin="0,0,0,18"
+            CornerRadius="32"
+            Background="#D9212121"
+            IsVisible="False">
+      <StackPanel Orientation="Horizontal" Spacing="0">
+        <Button x:Name="ConfirmPasteButton" Classes="pill" ToolTip.Tip="确认粘贴"><PathIcon Data="{StaticResource IconCheck}" Width="30" Height="30" Foreground="White" /></Button>
+        <Button x:Name="CancelPasteButton" Classes="pill" ToolTip.Tip="取消粘贴"><PathIcon Data="{StaticResource IconClose}" Width="30" Height="30" Foreground="White" /></Button>
+      </StackPanel>
+    </Border>
+
+    <Border x:Name="SidePanel"
+            Width="320"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Background="#F7F7F7"
+            BorderBrush="#33000000"
+            BorderThickness="1,0,0,0"
+            IsVisible="False">
+      <ContentControl x:Name="SideContent" />
+    </Border>
+
+    <Border x:Name="ThemeTransitionOverlay"
+        ZIndex="1000"
+            Background="Transparent"
+            Opacity="0"
+            IsHitTestVisible="False" />
+
+    <Border x:Name="DialogOverlay"
+            ZIndex="2000"
+            Background="#88000000"
+            IsVisible="False">
+      <ContentControl x:Name="DialogContent"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center" />
+    </Border>
+  </Grid>
+</UserControl>

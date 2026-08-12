@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ApplicationId>com.KV</ApplicationId>
+    <ApplicationVersion>100</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <NoWarn>$(NoWarn);BG8605;BG8606;BG8A00</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+  </ItemGroup>
+
+  <!-- These assemblies are loaded through Avalonia resource URIs rather than
+       direct CLR references, so keep them available in trimmed Release APKs. -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Avalonia.Controls.ColorPicker" RootMode="All" />
+    <TrimmerRootAssembly Include="Avalonia.Fonts.Inter" RootMode="All" />
+    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" RootMode="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.UI\KeyViewer.UI.csproj" />
+    <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidLibrary Include="..\..\..\android-bridge\build\outputs\aar\android-bridge-debug.aar"
+                    Bind="true" />
+    <AndroidMavenLibrary Include="dev.rikka.shizuku:api"
+                         Version="13.1.5"
+                         Bind="false"
+                         VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="dev.rikka.shizuku:provider"
+                         Version="13.1.5"
+                         Bind="false"
+                         VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="dev.rikka.shizuku:aidl"
+                         Version="13.1.5"
+                         Bind="false"
+                         VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="dev.rikka.shizuku:shared"
+                         Version="13.1.5"
+                         Bind="false"
+                         VerifyDependencies="false" />
+    <AndroidLibrary Include="$(UserProfile)\.gradle\caches\modules-2\files-2.1\net.java.dev.jna\jna\5.18.1\*\jna-5.18.1.aar"
+                    Bind="false" />
+    <TransformFile Include="Transforms\Metadata.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="..\..\..\app\src\main\res\mipmap-xxxhdpi\ic_launcher.png">
+      <Link>Resources\drawable\icon.png</Link>
+    </AndroidResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="Resources\values\styles.xml" />
+  </ItemGroup>
+</Project>

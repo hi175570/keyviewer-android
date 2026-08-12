@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.KV.KeyView
+        android:id="@+id/keyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <include
+        android:id="@+id/zoomControls"
+        layout="@layout/zoom_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp" />
+
+    <!-- 右上角按钮组 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:orientation="vertical"
+        android:layout_margin="12dp">
+
+        <ImageButton
+            android:id="@+id/globalSettingsBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_settings"
+            android:background="@drawable/bg_zoom_panel"
+            android:padding="10dp"
+            android:elevation="8dp" />
+
+        <ImageButton
+            android:id="@+id/layerManagerBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/ic_layers"
+            android:background="@drawable/bg_zoom_panel"
+            android:padding="10dp"
+            android:elevation="8dp" />
+
+        <ImageButton
+            android:id="@+id/configManagerBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/ic_config"
+            android:background="@drawable/bg_zoom_panel"
+            android:padding="10dp"
+            android:elevation="8dp" />
+
+    </LinearLayout>
+
+    <!-- 底部工具栏 -->
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="wrap_content"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_toolbar"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:elevation="8dp">
+
+        <ImageButton
+            android:id="@+id/addKeyBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_add"
+            android:background="@android:color/transparent" />
+
+        <ImageButton
+            android:id="@+id/deleteKeyBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_delete"
+            android:background="@android:color/transparent"
+            android:alpha="0.5" />
+
+        <ImageButton
+            android:id="@+id/copyBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_copy"
+            android:background="@android:color/transparent"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/pasteBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_paste"
+            android:background="@android:color/transparent"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/batchEditBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_batch_edit"
+            android:background="@android:color/transparent" />
+
+        <Button
+            android:id="@+id/selectAllBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="@android:color/transparent"
+            android:contentDescription="全选按键"
+            android:text="全"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/confirmPasteBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_check"
+            android:background="@android:color/transparent"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/cancelPasteBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_close"
+            android:background="@android:color/transparent"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- 底部左侧按钮组 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="12dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/floatWindowBtn"
+            android:layout_width="108dp"
+            android:layout_height="40dp"
+            android:text="开启悬浮窗"
+            android:textSize="14sp"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFF" />
+
+        <Button
+            android:id="@+id/shizukuBtn"
+            android:layout_width="108dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:text="授权 Shizuku"
+            android:textSize="14sp"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFF" />
+
+        <Button
+            android:id="@+id/switchIMEBtn"
+            android:layout_width="108dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:text="启用输入法"
+            android:textSize="14sp"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFF" />
+
+    </LinearLayout>
+
+    <!-- 右侧滑入面板 -->
+    <include
+        android:id="@+id/settingsPanel"
+        layout="@layout/settings_panel"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/globalSettingsPanel"
+        layout="@layout/global_settings_panel"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/layerManagerPanel"
+        layout="@layout/layer_manager_panel"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/configManagerPanel"
+        layout="@layout/config_manager_panel"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:visibility="gone" />
+
+</FrameLayout>

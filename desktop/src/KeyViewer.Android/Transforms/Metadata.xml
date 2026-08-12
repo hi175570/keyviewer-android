@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+  <!-- The AIDL/native implementation remains packaged for Java, but only the
+       stable bridge API is exposed to the C# platform shell. -->
+  <remove-node path="/api/package[@name='com.KV']" />
+  <remove-node path="/api/package[@name='com.sun.jna']" />
+</metadata>

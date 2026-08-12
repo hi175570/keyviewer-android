@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:elevation="8dp"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="图层管理"
+            android:textSize="18sp"
+            android:textColor="#333"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/closeLayerPanelBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="✕"
+            android:textSize="18sp"
+            android:background="@android:color/transparent"
+            android:textColor="#666" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="拖动 ≡ 调整图层顺序"
+        android:textSize="12sp"
+        android:textColor="#999"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="越靠上的按键越靠前显示"
+        android:textSize="12sp"
+        android:textColor="#999"
+        android:layout_marginBottom="16dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/layerRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFF"
+        android:padding="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/autoArrangeBtn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="自动排列"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/resetZIndexBtn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="重置图层"
+            android:textSize="14sp"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFF" />
+
+    </LinearLayout>
+
+</LinearLayout>

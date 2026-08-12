@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 已有的保持不变 -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+    <color name="background_light">#FFE0E0E0</color>
+    <color name="grid_line">#FFA0A0A0</color>
+    <color name="key_normal">#FF999999</color>
+    <color name="key_border">#FF666666</color>
+    <color name="selection_blue">#FF2196F3</color>
+    <color name="handle_fill">#FF2196F3</color>
+    <color name="handle_border">#FFFFFFFF</color>
+    <color name="zoom_panel_bg">#80000000</color>
+    <color name="zoom_button_text">#FFFFFFFF</color>
+    
+    <!-- 新增 -->
+    <color name="key_pressed">#FFFFFFFF</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#666666</color>
+    <color name="delete_disabled">#80FFFFFF</color>
+</resources>

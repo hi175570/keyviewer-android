@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>KeyViewer.Core</AssemblyName>
+    <RootNamespace>KeyViewer.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
+    <EmbeddedResource Include="..\..\..\app\src\main\assets\default_config.json"
+                      Link="Assets\default_config.json"
+                      LogicalName="KeyViewer.Core.Assets.default_config.json" />
+    <EmbeddedResource Include="..\..\..\app\src\main\assets\preset_jipper_10k.json"
+                      Link="Assets\preset_jipper_10k.json"
+                      LogicalName="KeyViewer.Core.Assets.preset_jipper_10k.json" />
+    <EmbeddedResource Include="..\..\..\app\src\main\assets\preset_jipper_12k.json"
+                      Link="Assets\preset_jipper_12k.json"
+                      LogicalName="KeyViewer.Core.Assets.preset_jipper_12k.json" />
+    <EmbeddedResource Include="..\..\..\app\src\main\assets\preset_jipper_16k.json"
+                      Link="Assets\preset_jipper_16k.json"
+                      LogicalName="KeyViewer.Core.Assets.preset_jipper_16k.json" />
+  </ItemGroup>
+</Project>

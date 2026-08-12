@@ -1,0 +1,21 @@
+<resources>
+    <string name="key_debounce_title">彈鍵防抖</string>
+    <string name="key_debounce_description">過快的第二次按下仍會顯示按鍵雨，但不會送進遊戲。不同鍵盤互不影響。</string>
+    <string name="key_debounce_default_millis">20</string>
+    <string name="key_debounce_millis_suffix"> ms（1–200）</string>
+    <string name="app_name">KeyViewer</string>
+    <string name="default_config_name">默认</string>
+    <string name="background_image_title">应用背景图片</string>
+    <string name="background_image_choose">选择背景图</string>
+    <string name="background_image_configured">背景图已设置</string>
+    <string name="background_image_clear">清除</string>
+    <string name="background_image_description">替换主编辑画布的白色或灰色背景，图片会居中裁切铺满；悬浮窗仍保持透明。</string>
+    <string name="key_restriction_title">按键限制</string>
+    <string name="key_restriction_description">开启后，仅放行当前 KV 中已有的按键；未显示的按键会被拦截。Esc 和左右 Windows 键始终放行。</string>
+    <string name="key_restriction_blocked_keys_hint">强制拦截键，例如：space, a, f1</string>
+    <string name="key_restriction_blocked_keys_help">用逗号或空格分隔。强制拦截优先于 KV、鬼键、映射和防弹键。</string>
+    <string name="add_key">新增按键</string>
+    <string name="delete_key">删除按键</string>
+    <string name="kps">KPS</string>
+    <string name="total">TOTAL</string>
+</resources>

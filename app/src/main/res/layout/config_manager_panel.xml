@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:elevation="8dp"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 标题行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="配置管理"
+            android:textSize="18sp"
+            android:textColor="#333"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/closeConfigPanelBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="✕"
+            android:textSize="18sp"
+            android:background="@android:color/transparent"
+            android:textColor="#666" />
+
+    </LinearLayout>
+
+    <!-- 提示文字 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="点击配置名称切换"
+        android:textSize="12sp"
+        android:textColor="#999"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="点击 ⋮ 排序、重命名或删除"
+        android:textSize="12sp"
+        android:textColor="#999"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="切换配置不会改变全局设置"
+        android:textSize="12sp"
+        android:textColor="#999"
+        android:layout_marginBottom="16dp" />
+
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/configRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFF"
+        android:padding="4dp" />
+
+    <!-- 新建配置按钮 -->
+    <Button
+        android:id="@+id/newConfigBtn"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="+ 新建配置"
+        android:textSize="14sp"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>

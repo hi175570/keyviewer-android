@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>KeyViewer.UI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
+    <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\..\app\src\main\assets\fonts\adofai.ttf"
+                      Link="Assets\Fonts\adofai.ttf" />
+    <AvaloniaResource Include="..\..\..\app\src\main\assets\fonts\maplestory_otf_bold.otf"
+                      Link="Assets\Fonts\maplestory_otf_bold.otf" />
+  </ItemGroup>
+</Project>

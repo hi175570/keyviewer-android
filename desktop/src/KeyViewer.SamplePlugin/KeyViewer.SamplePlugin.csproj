@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>KeyViewer.SamplePlugin</AssemblyName>
+    <RootNamespace>KeyViewer.SamplePlugin</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" Private="false" />
+  </ItemGroup>
+</Project>

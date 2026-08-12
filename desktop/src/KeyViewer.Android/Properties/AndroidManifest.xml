@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          android:installLocation="auto">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+  <uses-permission android:name="rikka.shizuku.API_PERMISSION" />
+  <application android:label="KeyViewer"
+               android:icon="@drawable/icon"
+               android:allowBackup="false"
+               android:hardwareAccelerated="true" />
+</manifest>
