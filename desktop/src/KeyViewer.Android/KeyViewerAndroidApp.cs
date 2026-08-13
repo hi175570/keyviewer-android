@@ -59,5 +59,8 @@ public sealed class KeyViewerAndroidApp : Avalonia.Application
     }
 
     internal void SetEditorForeground(bool foreground)
-        => _platform?.SetEditorForeground(foreground);
+    {
+        _platform?.SetEditorForeground(foreground);
+        if (foreground) _platform?.RefreshInputBackendStatus();
+    }
 }

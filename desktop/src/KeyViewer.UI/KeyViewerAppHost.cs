@@ -65,6 +65,7 @@ public sealed class KeyViewerAppHost : IDisposable
             : TimeSpan.FromSeconds(10));
 
         State.Changed += OnStateChanged;
+        State.TransientChanged += OnTransientStateChanged;
         StartInputSources();
         PluginHost.LoadDirectory(PluginRoot);
         PluginHost.LoadDirectory(Path.Combine(AppContext.BaseDirectory, "Plugins"));
@@ -483,6 +484,8 @@ public sealed class KeyViewerAppHost : IDisposable
         Changed?.Invoke();
     }
 
+    private void OnTransientStateChanged() => Changed?.Invoke();
+
     private void ScheduleSave() => ScheduleSave(TimeSpan.FromMilliseconds(500));
 
     private void ScheduleSave(TimeSpan delay) => _saveTimer.Change(delay, Timeout.InfiniteTimeSpan);
@@ -537,10 +540,12 @@ public sealed class KeyViewerAppHost : IDisposable
 
         _disposed = true;
         State.Changed -= OnStateChanged;
+        State.TransientChanged -= OnTransientStateChanged;
         _saveTimer.Change(Timeout.Infinite, Timeout.Infinite);
         SaveNowSafe();
         PluginHost.Dispose();
         Runtime.Dispose();
+        State.Dispose();
         _saveTimer.Dispose();
     }
 }

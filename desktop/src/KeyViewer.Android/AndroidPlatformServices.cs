@@ -12,8 +12,24 @@ using KeyViewer.UI.Controls;
 
 namespace KeyViewer.Android;
 
-public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
+public sealed class AndroidPlatformServices : IKeyViewerPlatformServices, IInputBackendPlatformServices
 {
+    private static readonly IReadOnlyList<InputBackendOption> AndroidInputBackends =
+    [
+        new(
+            "accessibility",
+            "无障碍（免 Shizuku）",
+            "只读实体键盘：支持按键显示、绑定、计数、KPS 和键雨；不拦截、不映射。"),
+        new(
+            "shizuku",
+            "Shizuku（完整功能）",
+            "通过 EVIOCGRAB/uinput 支持映射、鬼键、防抖和按键限制。"),
+        new(
+            "root",
+            "Root / Sui（完整功能）",
+            "使用 Magisk Sui 提供的 UID 0 后端；无需无线调试配对，仍需安装并授权 Sui。")
+    ];
+
     private readonly KeyViewerAppHost _host;
     private readonly AndroidInputSource _input;
     private readonly Context _context;
@@ -26,7 +42,6 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
     private WriteableBitmap? _overlayStaging;
     private byte[]? _overlayPixels;
     private Avalonia.PixelSize _overlayPixelSize;
-    private bool _editorForeground = true;
 
     public AndroidPlatformServices(KeyViewerAppHost host)
     {
@@ -35,7 +50,8 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
         var windowService = _context.GetSystemService(Context.WindowService)
             ?? throw new InvalidOperationException("Android WindowManager is unavailable.");
         _windowManager = windowService.JavaCast<IWindowManager>();
-        _input = new AndroidInputSource();
+        _input = new AndroidInputSource(host.Document.GlobalSettings.AndroidInputMode);
+        _input.StatusChanged += OnInputStatusChanged;
         host.AddInputSource(_input);
         host.Changed += OnHostChanged;
         Application.DisplayConfigurationChanged += OnDisplayConfigurationChanged;
@@ -55,6 +71,29 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
     public bool IsOverlayVisible => _overlayView?.IsAttachedToWindow == true;
     public string PlatformName => "Android";
     public event Action<bool>? OverlayVisibilityChanged;
+    public IReadOnlyList<InputBackendOption> InputBackendOptions => AndroidInputBackends;
+    public string ActiveInputBackend => _input.Mode;
+    public string InputBackendStatus => DescribeInputStatus(_input.Status);
+    public bool ActiveInputBackendSupportsRouting => _input.Mode != "accessibility";
+    public event Action? InputBackendChanged;
+
+    public void SetInputBackend(string id)
+    {
+        if (!AndroidInputBackends.Any(option => option.IsEnabled
+                && option.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        _input.SwitchMode(id);
+        _host.Document.GlobalSettings.AndroidInputMode = _input.Mode;
+        _host.NotifyEdited();
+        InputBackendChanged?.Invoke();
+    }
+
+    public void OpenInputBackendSettings() => _input.OpenCurrentSettings();
+
+    public void RefreshInputBackendStatus() => _input.RefreshStatus();
 
     public void ToggleOverlay()
     {
@@ -145,24 +184,10 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
         }
     }
 
-    public void SetEditorForeground(bool foreground)
+    public void SetEditorForeground(bool _)
     {
-        if (_editorForeground == foreground)
-        {
-            return;
-        }
-
-        _editorForeground = foreground;
-        if (_layout is null)
-        {
-            return;
-        }
-
-        _layout.Flags = OverlayWindowFlags();
-        if (IsOverlayVisible && _overlayView is not null)
-        {
-            _windowManager.UpdateViewLayout(_overlayView, _layout);
-        }
+        // Keep the overlay touchable in both foreground and background so its position can
+        // always be adjusted. NOT_TOUCH_MODAL still lets touches outside its bounds pass through.
     }
 
     public void ResetOverlayPosition()
@@ -198,16 +223,9 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
 
     private WindowManagerFlags OverlayWindowFlags()
     {
-        var flags = WindowManagerFlags.NotFocusable
+        return WindowManagerFlags.NotFocusable
             | WindowManagerFlags.NotTouchModal
             | WindowManagerFlags.LayoutInScreen;
-        // While the editor is in front, the overlay remains visible but clicks pass through to
-        // the editor. Once the editor is backgrounded, the overlay becomes draggable again.
-        if (_editorForeground)
-        {
-            flags |= WindowManagerFlags.NotTouchable;
-        }
-        return flags;
     }
 
     private void ClampPosition()
@@ -355,7 +373,40 @@ public sealed class AndroidPlatformServices : IKeyViewerPlatformServices
             _overlayView.Dispose();
             _overlayView = null;
         }
+        _input.StatusChanged -= OnInputStatusChanged;
         _input.Dispose();
+    }
+
+    private void OnInputStatusChanged(string status) => InputBackendChanged?.Invoke();
+
+    private static string DescribeInputStatus(string status)
+    {
+        if (status.StartsWith("listening:", StringComparison.Ordinal))
+        {
+            return $"Shizuku 正在监听 {status["listening:".Length..]} 个键盘设备";
+        }
+        if (status.StartsWith("shizuku_error:", StringComparison.Ordinal))
+        {
+            return "Shizuku 错误：" + status["shizuku_error:".Length..];
+        }
+        return status switch
+        {
+            "accessibility_listening" => "无障碍键盘监听中（事件原样透传给系统）",
+            "accessibility_permission_required" => "尚未开启 KeyViewer 无障碍服务",
+            "accessibility_waiting" => "无障碍服务已开启，正在等待系统连接",
+            "accessibility_disconnected" => "无障碍服务已断开",
+            "shizuku_unavailable" => "Shizuku 未启动",
+            "root_backend_unavailable" => "没有发现 Root/Sui 后端；请先安装并启用 Magisk Sui",
+            "root_backend_required" => "当前连接不是 UID 0；Root 模式需要 Sui 或以 Root 启动的 Shizuku",
+            "permission_required" => "需要授予 Shizuku 权限",
+            "permission_denied" => "Shizuku 权限被拒绝",
+            "starting" => "正在发现实体键盘",
+            "no_keyboard" => "没有发现可监听的实体键盘",
+            "native_helper_failed" => "Android 原生输入辅助程序启动失败",
+            "stopped" => "输入监听已停止",
+            var value when value.StartsWith("switching:", StringComparison.Ordinal) => "正在切换输入模式",
+            _ => status
+        };
     }
 
     private sealed class DraggableOverlayView : View

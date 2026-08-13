@@ -47,6 +47,7 @@ public final class AndroidInputBridge implements AutoCloseable {
     private final Map<Integer, Integer> outputReferences = new HashMap<>();
     private volatile String jnaPath;
     private volatile boolean listenersRegistered;
+    private volatile boolean requireRoot;
 
     private final Shizuku.OnBinderReceivedListener binderReceived = this::ensureStarted;
     private final Shizuku.OnBinderDeadListener binderDead = () -> {
@@ -78,15 +79,31 @@ public final class AndroidInputBridge implements AutoCloseable {
     }
 
     public void start() {
+        requireRoot = false;
         registerListeners();
         ensureStarted();
+    }
+
+    /** Uses the same efficient UserService path but only accepts a UID 0 Shizuku/Sui backend. */
+    public void startRoot() {
+        requireRoot = true;
+        registerListeners();
+        ensureStarted();
+    }
+
+    public boolean isRootBackendAvailable() {
+        try {
+            return Shizuku.pingBinder() && Shizuku.getUid() == 0;
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     public void requestPermission() {
         registerListeners();
         try {
             if (!Shizuku.pingBinder()) {
-                status("shizuku_unavailable");
+                status(requireRoot ? "root_backend_unavailable" : "shizuku_unavailable");
             } else if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                 ensureStarted();
             } else if (Shizuku.shouldShowRequestPermissionRationale()) {
@@ -103,7 +120,7 @@ public final class AndroidInputBridge implements AutoCloseable {
     private void ensureStarted() {
         try {
             if (!Shizuku.pingBinder()) {
-                status("shizuku_unavailable");
+                status(requireRoot ? "root_backend_unavailable" : "shizuku_unavailable");
                 return;
             }
             if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
@@ -112,6 +129,11 @@ public final class AndroidInputBridge implements AutoCloseable {
             }
         } catch (RuntimeException error) {
             status("shizuku_error:" + error.getClass().getSimpleName());
+            return;
+        }
+
+        if (requireRoot && !isRootBackendAvailable()) {
+            status("root_backend_required");
             return;
         }
 

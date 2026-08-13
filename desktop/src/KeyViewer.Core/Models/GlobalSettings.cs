@@ -18,4 +18,5 @@ public sealed class GlobalSettings
     public string KeyRestrictionBlockedKeys { get; set; } = string.Empty;
     public string LinuxInputDevice { get; set; } = string.Empty;
     public string BridgePipeName { get; set; } = "keyviewer.bridge.v1";
+    public string AndroidInputMode { get; set; } = "accessibility";
 }

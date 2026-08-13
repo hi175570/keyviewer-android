@@ -18,11 +18,21 @@ KeyViewer 可以在后台读取实体键盘输入，把按键状态、每键计�
 | 平台 | 发布包 | 输入后端 | 当前状态 |
 | --- | --- | --- | --- |
 | Windows 10/11 x64 | `KeyViewer-Windows-x64.exe` | 全局低级键盘钩子 | 主要支持平台；单文件、自带运行时，支持后台监听、拦截与映射 |
-| Android 7.0+ arm64 | `KeyViewer-Android-arm64.apk` | Shizuku + `EVIOCGRAB` + `/dev/uinput` | 支持实体键盘、悬浮窗、拦截与映射；实际可用性受 ROM、SELinux 与 Shizuku 环境影响 |
+| Android 7.0+ arm64 | `KeyViewer-Android-arm64.apk` | 无障碍（默认）/ Shizuku / Root-Sui | 默认免配对显示实体键盘、计数、KPS 与键雨；Shizuku 或 UID 0 的 Sui 后端提供拦截与映射 |
 | Android x86_64 | `KeyViewer-Android-x86_64.apk` | 同上 | 用于 x86_64 模拟器，不适用于普通 ARM 手机 |
 | Linux x64 | `KeyViewer-Linux-x64.tar.gz` | `evdev` + `uinput` | 实验性支持；需要 `/dev/input` 读取权限，拦截/映射还需要 `/dev/uinput` 写入权限 |
 
 发布包请从 [GitHub Releases](https://github.com/leoleo0980627-web/keyviewer-android/releases/latest) 下载。Windows EXE 与 Linux 包为自包含构建，不需要另行安装 .NET；Android APK 目前为项目签名的侧载包，不通过应用商店分发。
+
+Android 三种后端的能力边界如下：
+
+| 模式 | 首次准备 | 按键显示/绑定/统计 | 映射、鬼键、防抖、限制 |
+| --- | --- | --- | --- |
+| 无障碍（新安装默认） | 在系统设置启用“KeyViewer 键盘监听”，无需 Shizuku 配对 | 支持实体键盘，只读并原样透传 | 不支持；打开相关开关时会显示模式切换提示 |
+| Shizuku | 安装并启动 Shizuku，非 Root 设备通常需无线调试配对并授权 KeyViewer | 支持 | 在 ROM 允许访问 `/dev/input` 与 `/dev/uinput` 时支持 |
+| Root / Sui | Root 设备安装 Magisk Sui 并授权，后端 UID 必须为 0 | 支持 | 设计为完整功能且免无线调试配对；仍需在真实 Root 设备验证 ROM 兼容性 |
+
+当前源码状态已经通过 79 个核心测试、Windows Release 构建、Android Bridge lint，以及 arm64/x86_64 Release APK 构建。Android API 30 x86_64 模拟器已验证冷启动、无障碍实体按键计数与 KPS 自动回零；Samsung SM-A326BR（Android 13、arm64）已验证侧载、受限设置处理、无障碍服务绑定、沉浸式全屏，以及应用前台悬浮窗拖动。Root / Sui 仍明确保留为待 Root 真机验证路径。
 
 ## 功能概览
 
@@ -52,7 +62,7 @@ KeyViewer 可以在后台读取实体键盘输入，把按键状态、每键计�
 - 每个配置独立保存统一键雨速度；全局设置中可调整最大高度、预留高度与圆角。
 - 每键按下次数可直接编辑、归零并写入配置。
 - TOTAL 在加载、切换和保存配置时由全部非负按键计数重新计算，运行中按新的按下事件增量更新。
-- KPS 使用实时按下窗口统计，不受固定长度数组限制。
+- KPS 使用一秒单调时间滑动窗口，只统计有效的首次 DOWN；不计 REPEAT/UP，并由到期计时器主动刷新回 0。
 
 ### 输入路由
 
@@ -108,11 +118,15 @@ Windows 默认只读监听。请在已经确认配置正确后再开启鬼键、
 ### Android
 
 1. ARM 手机/平板安装 `KeyViewer-Android-arm64.apk`；只有 x86_64 模拟器才安装 `KeyViewer-Android-x86_64.apk`。
-2. 安装并启动 Shizuku，然后给 KeyViewer 授权。
-3. 允许“在其他应用上层显示”权限以使用悬浮窗。
-4. 连接实体键盘，在“输入来源”中确认 Android 输入桥已启动，再进行按键绑定。
+2. 新安装默认选择“无障碍（免 Shizuku）”，按应用内按钮打开系统无障碍设置并启用“KeyViewer 键盘监听”。此模式不读取屏幕内容，也不拦截或修改输入。
+3. Android 13+ 可能对侧载 APK 显示“受限设置/限制设置”：前往“设置 → 应用程序 → KeyViewer → 右上角更多”，先选择“允许受限设置”，再返回无障碍页面启用服务。不同 ROM 的文字可能略有差异。
+4. 允许“在其他应用上层显示”权限以使用悬浮窗。
+5. Android 编辑器以沉浸式横屏显示且不保留三边系统白框；从屏幕边缘滑动仍可临时唤出系统栏。
+6. 悬浮窗在编辑器前台或其他应用前台都可以直接拖动。悬浮窗矩形外的触控会传给下层应用，矩形内用于拖动悬浮窗。
+7. 连接实体键盘，在“全局设置”或“输入来源”中确认监听已启动，再进行按键绑定。
+8. 需要映射、鬼键、防抖或按键限制时，切换到 Shizuku 完整模式；Root 用户也可安装 Magisk Sui，选择“Root / Sui”使用 UID 0 后端而无需无线调试配对。
 
-Android 的免 root 映射依赖 shell 身份能够访问 `/dev/input/event*` 与 `/dev/uinput`。某些厂商 ROM 即使 Shizuku 已授权仍会被 SELinux 拒绝；这属于设备环境限制，不代表普通显示与配置编辑一定失效。
+无障碍、Shizuku 与 Root/Sui 三种后端互斥运行，不会重复计算同一次按键。在无障碍模式中开启需要拦截的功能时，应用会用自身 Avalonia UI 提示“取消 / Root-Sui / Shizuku”；切换模式不会自动安装、配对或替用户确认系统授权。Android 的免 root 映射依赖 shell 身份能够访问 `/dev/input/event*` 与 `/dev/uinput`。某些厂商 ROM 即使 Shizuku 已授权仍会被 SELinux 拒绝；这属于设备环境限制，不代表无障碍显示与配置编辑一定失效。
 
 ### Linux
 
@@ -164,7 +178,7 @@ KeyViewer/
 ### 环境
 
 - .NET SDK `10.0.302`（版本由 `global.json` 固定）。
-- Android Studio JBR / Java 17、Android SDK、NDK `27.3.13750724` 和 CMake（仅 Android）。
+- Android Studio JBR / Java 17+（当前验证环境为 JBR 21）、Android SDK、NDK `27.3.13750724` 和 CMake（仅 Android）。
 - Windows 上的 Android Gradle 构建请让 `JAVA_HOME` 指向 Android Studio JBR。
 
 ### 还原、测试和桌面构建
@@ -186,14 +200,20 @@ dotnet publish .\desktop\src\KeyViewer.Desktop\KeyViewer.Desktop.csproj `
 ### Android 构建
 
 ```powershell
-$env:JAVA_HOME='C:\Program Files\Android\Android Studio\jbr'
-.\gradlew.bat :android-bridge:assembleDebug
+$jbrPath = 'C:\Program Files\Android\Android Studio\jbr'
+$androidSdkPath = "$env:LOCALAPPDATA\Android\Sdk"
+$androidProject = '.\desktop\src\KeyViewer.Android\KeyViewer.Android.csproj'
+$env:JAVA_HOME = $jbrPath
 
-dotnet publish .\desktop\src\KeyViewer.Android\KeyViewer.Android.csproj `
-  -c Release -f net10.0-android -r android-arm64
+.\gradlew.bat :android-bridge:assembleDebug :android-bridge:lintDebug
 
-dotnet publish .\desktop\src\KeyViewer.Android\KeyViewer.Android.csproj `
-  -c Release -f net10.0-android -r android-x64
+dotnet restore $androidProject -r android-arm64
+dotnet publish $androidProject -c Release -r android-arm64 --no-restore `
+  -p:JavaSdkDirectory="$jbrPath" -p:AndroidSdkDirectory="$androidSdkPath"
+
+dotnet restore $androidProject -r android-x64
+dotnet publish $androidProject -c Release -r android-x64 --no-restore `
+  -p:JavaSdkDirectory="$jbrPath" -p:AndroidSdkDirectory="$androidSdkPath"
 ```
 
 `app/` 保留原生 Android 实现、输入服务、资源、预设与回归测试；当前发布 APK 的跨平台 UI 入口位于 `desktop/src/KeyViewer.Android`，通过 `android-bridge` 复用 Android 输入能力。
@@ -220,17 +240,19 @@ dotnet publish .\desktop\src\KeyViewer.Android\KeyViewer.Android.csproj `
 - 键盘本身的 6KRO、冲突键或固件丢键无法由软件补出。
 - Windows/Linux 发布包目前没有商业代码签名；Android APK 也不是应用商店签名渠道。
 - 真机 Android 的 `/dev/input`、`/dev/uinput` 与 SELinux 行为随 ROM 而异，发布前的构建、签名和模拟器验证不能替代每一种实体设备测试。
+- Android 系统同时只会把实体按键过滤能力交给一个无障碍服务；若其他服务已经请求过滤按键，KeyViewer 可能无法收到事件。软键盘和纯触控输入通常也不会产生可观察的实体 `KeyEvent`。
+- Root / Sui 路径已完成代码、构建和权限状态检查，但当前发布前验证环境没有 Root 真机；不要把“构建通过”等同于已经验证所有 Root ROM。
 - Linux 后端已经实现 `evdev/uinput` 路由，但本项目当前主要在 Windows 与 Android 环境开发，Linux 仍应视为实验性平台。
 - 外部素材会增加 JSON 和内存占用；请遵守素材大小限制，避免把超大动画图当作按键图。
 - 旧版原生 Android 与当前跨平台 UI 同时保留在仓库中；正式发布包以 Releases 中标明的文件为准。
 
 ## 安全说明
 
-KeyViewer 的映射、鬼键与按键限制需要系统级输入能力。启用会拦截输入的功能前，请确保画布里至少保留必要按键；若配置异常，先用受保护的 Esc/Windows 键退出当前操作，再关闭监听或程序。不要从不可信来源安装插件、配置或替换过的 APK/EXE。
+KeyViewer 的映射、鬼键与按键限制需要系统级输入能力；Android 无障碍模式始终只读并原样透传。启用会拦截输入的功能前，请确保画布里至少保留必要按键；若配置异常，先用受保护的 Esc/Windows 键退出当前操作，再关闭监听或程序。不要从不可信来源安装插件、配置或替换过的 APK/EXE。
 
 ## 参与开发
 
-提交问题时请附上平台、系统版本、发布包名称、输入设备、复现步骤，以及是否开启映射/鬼键/防抖/按键限制。Android 问题还请注明 Shizuku 状态、设备 ABI 与 ROM；Linux 问题请注明实际使用的 `event*` 和 `/dev/uinput` 权限。
+提交问题时请附上平台、系统版本、发布包名称、输入设备、复现步骤，以及是否开启映射/鬼键/防抖/按键限制。Android 问题还请注明当前后端（无障碍 / Shizuku / Root-Sui）、授权状态、设备 ABI 与 ROM；Linux 问题请注明实际使用的 `event*` 和 `/dev/uinput` 权限。
 
 ## License
 

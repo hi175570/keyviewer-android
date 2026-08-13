@@ -10,6 +10,24 @@ public interface IKeyViewerPlatformServices : IDisposable
     void ResetOverlayPosition();
 }
 
+public sealed record InputBackendOption(
+    string Id,
+    string DisplayName,
+    string Description,
+    bool IsEnabled = true);
+
+public interface IInputBackendPlatformServices
+{
+    IReadOnlyList<InputBackendOption> InputBackendOptions { get; }
+    string ActiveInputBackend { get; }
+    string InputBackendStatus { get; }
+    bool ActiveInputBackendSupportsRouting { get; }
+    event Action? InputBackendChanged;
+    void SetInputBackend(string id);
+    void OpenInputBackendSettings();
+    void RefreshInputBackendStatus();
+}
+
 public sealed class NullKeyViewerPlatformServices : IKeyViewerPlatformServices
 {
     public bool IsOverlayVisible => false;

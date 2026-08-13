@@ -34,7 +34,6 @@
         </provider>
 
         <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
-        <meta-data android:name="moe.shizuku.client.SUI_DISABLED" android:value="true" />
 
         <activity
             android:name=".MainActivity"

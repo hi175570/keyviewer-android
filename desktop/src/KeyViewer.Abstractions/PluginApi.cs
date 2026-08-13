@@ -18,12 +18,24 @@ public sealed class KeyInputEvent
         string deviceId,
         DateTimeOffset timestamp,
         bool isInjected = false)
+        : this(key, state, deviceId, timestamp, isInjected, false)
+    {
+    }
+
+    public KeyInputEvent(
+        string key,
+        KeyEventState state,
+        string deviceId,
+        DateTimeOffset timestamp,
+        bool isInjected,
+        bool isObservationOnly)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         State = state;
         DeviceId = deviceId ?? string.Empty;
         Timestamp = timestamp;
         IsInjected = isInjected;
+        IsObservationOnly = isObservationOnly;
     }
 
     public string Key { get; }
@@ -31,6 +43,7 @@ public sealed class KeyInputEvent
     public string DeviceId { get; }
     public DateTimeOffset Timestamp { get; }
     public bool IsInjected { get; }
+    public bool IsObservationOnly { get; }
 }
 
 public sealed class KeyRouteContext

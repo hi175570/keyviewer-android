@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keyviewer_accessibility_label">KeyViewer 键盘监听</string>
+    <string name="keyviewer_accessibility_description">只读取实体键盘按键以显示按键、计数、KPS 与键雨，不读取屏幕内容。</string>
+</resources>

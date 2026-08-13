@@ -3,6 +3,19 @@
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
     <uses-permission android:name="rikka.shizuku.API_PERMISSION" />
     <application>
+        <service
+            android:name="com.KV.bridge.KeyViewerAccessibilityService"
+            android:description="@string/keyviewer_accessibility_description"
+            android:exported="true"
+            android:label="@string/keyviewer_accessibility_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/keyviewer_accessibility_service" />
+        </service>
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
@@ -11,6 +24,5 @@
             android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
         <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
-        <meta-data android:name="moe.shizuku.client.SUI_DISABLED" android:value="true" />
     </application>
 </manifest>

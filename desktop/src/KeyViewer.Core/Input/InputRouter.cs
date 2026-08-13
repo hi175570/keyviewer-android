@@ -87,7 +87,7 @@ public sealed class InputRouter
         var sourceIdentity = $"{input.DeviceId}\0{sourceKey}";
         var key = _document.FindKey(sourceKey);
 
-        if (ApplyRestriction(context, sourceKey, key))
+        if (!input.IsObservationOnly && ApplyRestriction(context, sourceKey, key))
         {
             UpdateDownState(input.State, sourceIdentity);
             return context;
@@ -105,21 +105,24 @@ public sealed class InputRouter
             return context;
         }
 
-        foreach (var filter in _filters.ToArray())
+        if (!input.IsObservationOnly)
         {
-            try
+            foreach (var filter in _filters.ToArray())
             {
-                filter.Process(context);
-            }
-            catch (Exception exception)
-            {
-                context.Reason = $"filter-error:{filter.Id}:{exception.GetType().Name}";
-            }
+                try
+                {
+                    filter.Process(context);
+                }
+                catch (Exception exception)
+                {
+                    context.Reason = $"filter-error:{filter.Id}:{exception.GetType().Name}";
+                }
 
-            if (context.StopProcessing)
-            {
-                UpdateDownState(input.State, sourceIdentity);
-                return context;
+                if (context.StopProcessing)
+                {
+                    UpdateDownState(input.State, sourceIdentity);
+                    return context;
+                }
             }
         }
 
@@ -141,7 +144,11 @@ public sealed class InputRouter
             context.CountPress = false;
         }
 
-        if (key.GhostKey)
+        if (input.IsObservationOnly)
+        {
+            context.Reason = "observation-only";
+        }
+        else if (key.GhostKey)
         {
             context.ForwardToSystem = false;
             context.Reason = "ghost-key";

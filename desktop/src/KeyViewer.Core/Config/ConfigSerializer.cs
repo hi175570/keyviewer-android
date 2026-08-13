@@ -340,6 +340,13 @@ public static class ConfigSerializer
         settings.BackgroundImageAsset = Limit(settings.BackgroundImageAsset, 128, string.Empty);
         settings.LinuxInputDevice = Limit(settings.LinuxInputDevice, 2_048, string.Empty);
         settings.BridgePipeName = Limit(settings.BridgePipeName, 128, "keyviewer.bridge.v1");
+        settings.AndroidInputMode = settings.AndroidInputMode?.Trim().ToLowerInvariant() switch
+        {
+            "accessibility" => "accessibility",
+            "shizuku" => "shizuku",
+            "root" => "root",
+            _ => "accessibility"
+        };
     }
 
     private static void RemoveUnreferencedAssets(JsonObject root, KeyViewerDocument document)

@@ -7,6 +7,31 @@ namespace KeyViewer.Core.Tests;
 public sealed class InputRouterTests
 {
     [Fact]
+    public void Observation_only_input_ignores_interception_policy_but_still_counts_canvas_key()
+    {
+        var document = CreateDocument("a");
+        var key = document.Keys[0];
+        key.BoundKey = "a";
+        key.MappingEnabled = true;
+        key.MappedKey = "b";
+        key.GhostKey = true;
+        document.GlobalSettings.KeyRestrictionEnabled = true;
+        document.GlobalSettings.KeyRestrictionBlockedKeys = "a";
+        document.GlobalSettings.KeyDebounceEnabled = true;
+        var router = new InputRouter(document);
+
+        var route = router.Route(new KeyInputEvent(
+            "a", KeyEventState.Down, "accessibility:1", DateTimeOffset.UtcNow,
+            isInjected: false, isObservationOnly: true));
+
+        Assert.True(route.ShowInViewer);
+        Assert.True(route.CountPress);
+        Assert.True(route.ForwardToSystem);
+        Assert.Equal("a", route.OutputKey);
+        Assert.Equal("observation-only", route.Reason);
+    }
+
+    [Fact]
     public void Restriction_runs_before_key_features_and_protects_escape()
     {
         var document = CreateDocument("a");

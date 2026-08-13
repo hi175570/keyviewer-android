@@ -242,7 +242,9 @@ public class KeyManager {
         keyCodeCount.put(keyCode, newCount);
         totalPressCount++;
         
-        long now = System.currentTimeMillis();
+        // KPS is an elapsed-time rate. Wall-clock time can jump when Android
+        // synchronizes the clock, so always use the monotonic uptime clock.
+        long now = SystemClock.elapsedRealtime();
         recentPressTimes.add(now);
         recentPressTimes.removeOlderThan(now - 1000);
         
@@ -266,7 +268,7 @@ public class KeyManager {
     }
     
     public int getKPS() {
-        long now = System.currentTimeMillis();
+        long now = SystemClock.elapsedRealtime();
         recentPressTimes.removeOlderThan(now - 1000);
         return recentPressTimes.size();
     }

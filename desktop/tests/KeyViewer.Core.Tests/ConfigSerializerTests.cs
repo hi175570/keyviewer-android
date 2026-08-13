@@ -176,7 +176,8 @@ public sealed class ConfigSerializerTests
                 DarkModeEnabled = true,
                 FloatWindowScale = 1.25,
                 KeyRestrictionEnabled = true,
-                KeyRestrictionBlockedKeys = "A, B"
+                KeyRestrictionBlockedKeys = "A, B",
+                AndroidInputMode = "accessibility"
             };
 
             ConfigSerializer.SaveGlobalSettings(path, settings);
@@ -186,6 +187,7 @@ public sealed class ConfigSerializerTests
             Assert.Equal(1.25, loaded.FloatWindowScale);
             Assert.True(loaded.KeyRestrictionEnabled);
             Assert.Equal("a, b", loaded.KeyRestrictionBlockedKeys);
+            Assert.Equal("accessibility", loaded.AndroidInputMode);
         }
         finally
         {

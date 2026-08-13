@@ -117,6 +117,10 @@ public sealed partial class KeyViewerMainView : UserControl
         _host.Router.Routed += OnRoutedForBinding;
         DetachedFromVisualTree += OnDetachedFromVisualTree;
         _platform.OverlayVisibilityChanged += OnOverlayVisibilityChanged;
+        if (_platform is IInputBackendPlatformServices inputBackend)
+        {
+            inputBackend.InputBackendChanged += OnInputBackendChanged;
+        }
         UpdateEditModeUi();
     }
 
@@ -391,11 +395,52 @@ public sealed partial class KeyViewerMainView : UserControl
         stack.Children.Add(backgroundRow);
         stack.Children.Add(Hint("替换主编辑画布背景；悬浮窗保持透明。背景图属于全局设置，不随 KV 配置导入导出。"));
 
+        if (_platform is IInputBackendPlatformServices globalBackend)
+        {
+            stack.Children.Add(Section("Android 输入模式"));
+            foreach (var option in globalBackend.InputBackendOptions.Where(option => option.IsEnabled))
+            {
+                var selected = option.Id.Equals(
+                    globalBackend.ActiveInputBackend, StringComparison.OrdinalIgnoreCase);
+                var mode = new Button
+                {
+                    Content = $"{(selected ? "●" : "○")} {option.DisplayName}",
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Left
+                };
+                mode.Click += (_, _) =>
+                {
+                    globalBackend.SetInputBackend(option.Id);
+                    ShowGlobalPanel();
+                };
+                stack.Children.Add(mode);
+                stack.Children.Add(Hint(option.Description));
+            }
+            stack.Children.Add(Hint("状态：" + globalBackend.InputBackendStatus));
+            var configureInput = new Button
+            {
+                Content = globalBackend.ActiveInputBackend.Equals(
+                    "accessibility", StringComparison.OrdinalIgnoreCase)
+                    ? "打开系统无障碍设置"
+                    : globalBackend.ActiveInputBackend.Equals("root", StringComparison.OrdinalIgnoreCase)
+                        ? "检查 Root / Sui 授权"
+                        : "检查 / 授予 Shizuku 权限"
+            };
+            configureInput.Click += (_, _) => globalBackend.OpenInputBackendSettings();
+            stack.Children.Add(configureInput);
+        }
+
         stack.Children.Add(Section("输入保护"));
         var debounce = new ToggleSwitch { Content = "弹键防抖", IsChecked = settings.KeyDebounceEnabled };
-        debounce.IsCheckedChanged += (_, _) =>
+        debounce.IsCheckedChanged += async (_, _) =>
         {
-            settings.KeyDebounceEnabled = debounce.IsChecked == true;
+            var enabled = debounce.IsChecked == true;
+            if (enabled && !await EnsureRoutedInputModeAsync("弹键防抖"))
+            {
+                debounce.IsChecked = false;
+                return;
+            }
+            settings.KeyDebounceEnabled = enabled;
             _host.NotifyEdited();
         };
         stack.Children.Add(debounce);
@@ -409,15 +454,25 @@ public sealed partial class KeyViewerMainView : UserControl
             Content = "按键限制（拦截所有非画布按键）",
             IsChecked = settings.KeyRestrictionEnabled
         };
-        restriction.IsCheckedChanged += (_, _) =>
+        restriction.IsCheckedChanged += async (_, _) =>
         {
-            settings.KeyRestrictionEnabled = restriction.IsChecked == true;
+            var enabled = restriction.IsChecked == true;
+            if (enabled && !await EnsureRoutedInputModeAsync("按键限制"))
+            {
+                restriction.IsChecked = false;
+                return;
+            }
+            settings.KeyRestrictionEnabled = enabled;
             _host.NotifyEdited();
         };
         stack.Children.Add(restriction);
-        stack.Children.Add(Hint(OperatingSystem.IsWindows()
-            ? "警告：开启后，画布里没有的按键会被系统级拦截；下方名单还会额外拦截画布中的指定键。Esc 和左右 Windows 键永久放行。"
-            : "只响应画布中已有的按键；Esc 和左右 Windows 键永久保留。"));
+        var observationOnly = _platform is IInputBackendPlatformServices inputBackend
+            && !inputBackend.ActiveInputBackendSupportsRouting;
+        stack.Children.Add(Hint(observationOnly
+            ? "当前是无障碍只读模式：这些选项会保留在配置中，但不会拦截、修改或重注入系统按键；切到 Shizuku 或 Root / Sui 完整模式后才会生效。"
+            : OperatingSystem.IsWindows()
+                ? "警告：开启后，画布里没有的按键会被系统级拦截；下方名单还会额外拦截画布中的指定键。Esc 和左右 Windows 键永久放行。"
+                : "只响应画布中已有的按键；Esc 和左右 Windows 键永久保留。"));
         var blocked = new TextBox
         {
             PlaceholderText = OperatingSystem.IsWindows()
@@ -561,9 +616,15 @@ public sealed partial class KeyViewerMainView : UserControl
                 Content = "启用按键映射",
                 IsChecked = key.MappingEnabled
             };
-            mapping.IsCheckedChanged += (_, _) =>
+            mapping.IsCheckedChanged += async (_, _) =>
             {
-                key.MappingEnabled = mapping.IsChecked == true;
+                var enabled = mapping.IsChecked == true;
+                if (enabled && !await EnsureRoutedInputModeAsync("按键映射"))
+                {
+                    mapping.IsChecked = false;
+                    return;
+                }
+                key.MappingEnabled = enabled;
                 RemoveSelfMapping(key);
                 _host.NotifyEdited();
                 ShowKeyPanel(key);
@@ -583,7 +644,17 @@ public sealed partial class KeyViewerMainView : UserControl
                 Content = "鬼键（显示但拦截输入）",
                 IsChecked = key.GhostKey
             };
-            ghost.IsCheckedChanged += (_, _) => { key.GhostKey = ghost.IsChecked == true; _host.NotifyEdited(); };
+            ghost.IsCheckedChanged += async (_, _) =>
+            {
+                var enabled = ghost.IsChecked == true;
+                if (enabled && !await EnsureRoutedInputModeAsync("鬼键"))
+                {
+                    ghost.IsChecked = false;
+                    return;
+                }
+                key.GhostKey = enabled;
+                _host.NotifyEdited();
+            };
             stack.Children.Add(ghost);
         }
 
@@ -767,7 +838,7 @@ public sealed partial class KeyViewerMainView : UserControl
             Content = "启用按键映射",
             IsChecked = mappingValues[0]
         };
-        mappingToggle.IsCheckedChanged += (_, _) =>
+        mappingToggle.IsCheckedChanged += async (_, _) =>
         {
             if (mappingToggle.IsChecked is not bool enabled)
             {
@@ -775,6 +846,11 @@ public sealed partial class KeyViewerMainView : UserControl
             }
 
             mappingToggle.IsThreeState = false;
+            if (enabled && !await EnsureRoutedInputModeAsync("批量按键映射"))
+            {
+                mappingToggle.IsChecked = false;
+                return;
+            }
             if (enabled)
             {
                 foreach (var key in keys)
@@ -794,10 +870,24 @@ public sealed partial class KeyViewerMainView : UserControl
                 ShowBatchKeyPanel();
             }));
         }
-        stack.Children.Add(BatchToggleRow(
-            "鬼键（显示但拦截输入）",
-            keys.Select(key => key.GhostKey).ToArray(),
-            value => ApplyBatch(keys, new KeyBatchPatch { GhostKey = value }, "鬼键")));
+        var ghostValues = keys.Select(key => key.GhostKey).ToArray();
+        var ghostToggle = new ToggleSwitch
+        {
+            Content = "鬼键（显示但拦截输入）",
+            IsChecked = ghostValues[0]
+        };
+        ghostToggle.IsCheckedChanged += async (_, _) =>
+        {
+            if (ghostToggle.IsChecked is not bool enabled) return;
+            ghostToggle.IsThreeState = false;
+            if (enabled && !await EnsureRoutedInputModeAsync("批量鬼键"))
+            {
+                ghostToggle.IsChecked = false;
+                return;
+            }
+            ApplyBatch(keys, new KeyBatchPatch { GhostKey = enabled }, "鬼键");
+        };
+        stack.Children.Add(ghostToggle);
 
         stack.Children.Add(Section("显示"));
         stack.Children.Add(BatchTextRow("显示文字", keys.Select(key => key.DisplayLabel).ToArray(),
@@ -1592,6 +1682,88 @@ public sealed partial class KeyViewerMainView : UserControl
         return string.IsNullOrWhiteSpace(result) ? null : result;
     }
 
+    private async Task<bool> EnsureRoutedInputModeAsync(string featureName)
+    {
+        if (_platform is not IInputBackendPlatformServices backend
+            || backend.ActiveInputBackendSupportsRouting)
+        {
+            return true;
+        }
+
+        var selected = await PromptForInputBackendAsync(featureName);
+        if (selected is null)
+        {
+            return false;
+        }
+
+        backend.SetInputBackend(selected);
+        _statusText.Text = selected == "root"
+            ? "已切换到 Root / Sui；若尚未安装或授权，请到全局设置继续配置"
+            : "已切换到 Shizuku；若尚未启动或配对，请到全局设置继续配置";
+        return true;
+    }
+
+    private async Task<string?> PromptForInputBackendAsync(string featureName)
+    {
+        var completion = new TaskCompletionSource<string?>();
+        var stack = new StackPanel { Margin = new Thickness(18), Spacing = 12 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = $"“{featureName}”需要完整输入模式",
+            FontSize = 18,
+            FontWeight = FontWeight.SemiBold
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = "无障碍模式只读取按键，不能拦截或替换游戏输入。你可以取消这次修改，或立即切换输入模式；切换不会自动完成 Shizuku 配对、Sui 安装或系统授权。",
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
+        var cancel = new Button { Content = "取消", Margin = new Thickness(0, 0, 4, 0) };
+        var root = new Button
+        {
+            Content = "Root / Sui",
+            Margin = new Thickness(4, 0),
+            Background = new SolidColorBrush(Color.Parse("#7B1FA2")),
+            Foreground = Brushes.White
+        };
+        var shizuku = new Button
+        {
+            Content = "Shizuku",
+            Margin = new Thickness(4, 0, 0, 0),
+            Background = new SolidColorBrush(Color.Parse("#FF9800")),
+            Foreground = Brushes.White
+        };
+        void Complete(string? value)
+        {
+            _dialogOverlay.IsVisible = false;
+            _dialogContent.Content = null;
+            completion.TrySetResult(value);
+        }
+        cancel.Click += (_, _) => Complete(null);
+        root.Click += (_, _) => Complete("root");
+        shizuku.Click += (_, _) => Complete("shizuku");
+        actions.Children.Add(cancel);
+        Grid.SetColumn(root, 1);
+        actions.Children.Add(root);
+        Grid.SetColumn(shizuku, 2);
+        actions.Children.Add(shizuku);
+        stack.Children.Add(actions);
+
+        _dialogContent.Content = new Border
+        {
+            Width = 440,
+            CornerRadius = new CornerRadius(12),
+            Background = new SolidColorBrush(_host.Document.GlobalSettings.DarkModeEnabled
+                ? Color.Parse("#2D2D2D") : Colors.White),
+            BoxShadow = new BoxShadows(new BoxShadow { Blur = 18, Color = Color.Parse("#55000000") }),
+            Child = stack
+        };
+        _dialogOverlay.IsVisible = true;
+        return await completion.Task;
+    }
+
     private async Task<bool> ConfirmAsync(string title, string message)
     {
         var completion = new TaskCompletionSource<bool>();
@@ -1641,6 +1813,48 @@ public sealed partial class KeyViewerMainView : UserControl
     {
         var stack = PanelStack();
         stack.Children.Add(Section("输入来源"));
+        if (_platform is IInputBackendPlatformServices backend)
+        {
+            stack.Children.Add(Hint("输入后端互斥运行，不会让无障碍与 Shizuku 对同一次按键重复计数。"));
+            foreach (var option in backend.InputBackendOptions)
+            {
+                var selected = option.Id.Equals(
+                    backend.ActiveInputBackend, StringComparison.OrdinalIgnoreCase);
+                var button = new Button
+                {
+                    Content = $"{(selected ? "●" : "○")} {option.DisplayName}",
+                    IsEnabled = option.IsEnabled,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    HorizontalAlignment = HorizontalAlignment.Stretch
+                };
+                button.Click += (_, _) =>
+                {
+                    backend.SetInputBackend(option.Id);
+                    ShowInputPanel();
+                };
+                stack.Children.Add(button);
+                stack.Children.Add(Hint(option.Description));
+            }
+
+            stack.Children.Add(Section("当前状态"));
+            stack.Children.Add(Hint(backend.InputBackendStatus));
+            var settings = new Button
+            {
+                Content = backend.ActiveInputBackend.Equals(
+                    "accessibility", StringComparison.OrdinalIgnoreCase)
+                    ? "打开系统无障碍设置"
+                    : backend.ActiveInputBackend.Equals("root", StringComparison.OrdinalIgnoreCase)
+                        ? "检查 Root / Sui 授权"
+                        : "检查 / 授予 Shizuku 权限"
+            };
+            settings.Click += (_, _) => backend.OpenInputBackendSettings();
+            stack.Children.Add(settings);
+
+            if (!backend.ActiveInputBackendSupportsRouting && ConfigurationNeedsRoutedInput())
+            {
+                stack.Children.Add(Hint("⚠ 当前配置包含映射、鬼键、防抖或按键限制。无障碍模式仍会正确显示和计数，但这些拦截功能不会作用于游戏。"));
+            }
+        }
         foreach (var source in _host.Runtime.Sources)
         {
             stack.Children.Add(Hint($"{(source.IsRunning ? "●" : "○")} {source.DisplayName}"));
@@ -1658,6 +1872,14 @@ public sealed partial class KeyViewerMainView : UserControl
             stack.Children.Add(Hint("需要当前用户拥有 /dev/input/event* 读取权限；否则使用 input 组或 udev 规则授权。Linux 后端目前只观察，不独占系统输入。"));
         }
         ShowPanel("输入来源", new ScrollViewer { Content = stack }, "input");
+    }
+
+    private bool ConfigurationNeedsRoutedInput()
+    {
+        var settings = _host.Document.GlobalSettings;
+        return settings.KeyDebounceEnabled
+            || settings.KeyRestrictionEnabled
+            || _host.Document.Keys.Any(key => key.GhostKey || key.MappingEnabled);
     }
 
     private static StackPanel PanelStack() => new()
@@ -2140,6 +2362,14 @@ public sealed partial class KeyViewerMainView : UserControl
             }
         });
 
+    private void OnInputBackendChanged()
+        => Dispatcher.UIThread.Post(() =>
+        {
+            _statusText.Text = BuildStatus();
+            if (_panelMode == "global") ShowGlobalPanel();
+            else if (_panelMode == "input") ShowInputPanel();
+        });
+
     private void ToggleListening()
     {
         var anyRunning = _host.Runtime.Sources.Any(source => source.IsRunning);
@@ -2232,6 +2462,10 @@ public sealed partial class KeyViewerMainView : UserControl
         _canvas.SelectionChanged -= OnSelectionChanged;
         _canvas.EditModeChanged -= UpdateEditModeUi;
         _platform.OverlayVisibilityChanged -= OnOverlayVisibilityChanged;
+        if (_platform is IInputBackendPlatformServices inputBackend)
+        {
+            inputBackend.InputBackendChanged -= OnInputBackendChanged;
+        }
         _canvas.Dispose();
         if (_ownsHost)
         {

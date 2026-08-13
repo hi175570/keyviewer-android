@@ -1,22 +1,38 @@
+using System.Diagnostics;
 using KeyViewer.Abstractions;
 using KeyViewer.Core.Models;
 
 namespace KeyViewer.Core.Input;
 
-public sealed class KeyStateService
+public sealed class KeyStateService : IDisposable
 {
     private readonly object _gate = new();
     private readonly HashSet<string> _pressed = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Queue<DateTimeOffset> _recentPresses = new();
+    private readonly KpsCounter _kpsCounter;
+    private readonly Timer _kpsExpiryTimer;
     private KeyViewerDocument _document;
+    private int _lastPublishedKps;
+    private bool _disposed;
 
     public KeyStateService(KeyViewerDocument document)
+        : this(document, TimeSpan.FromSeconds(1), Stopwatch.GetTimestamp, Stopwatch.Frequency)
+    {
+    }
+
+    internal KeyStateService(
+        KeyViewerDocument document,
+        TimeSpan kpsWindow,
+        Func<long> getTimestamp,
+        long timestampFrequency)
     {
         _document = document ?? throw new ArgumentNullException(nameof(document));
+        _kpsCounter = new KpsCounter(kpsWindow, getTimestamp, timestampFrequency);
+        _kpsExpiryTimer = new Timer(OnKpsExpiry, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _document.RecalculateTotalPressCount();
     }
 
     public event Action? Changed;
+    public event Action? TransientChanged;
 
     public KeyViewerDocument Document
     {
@@ -35,7 +51,7 @@ public sealed class KeyStateService
                 _document = value;
                 _document.RecalculateTotalPressCount();
                 _pressed.Clear();
-                _recentPresses.Clear();
+                ClearKpsLocked();
             }
 
             Changed?.Invoke();
@@ -70,10 +86,10 @@ public sealed class KeyStateService
                     _document.TotalPressCount++;
                 }
 
-                _recentPresses.Enqueue(route.Input.Timestamp);
+                _kpsCounter.RecordPress();
+                _lastPublishedKps = _kpsCounter.Count;
+                ScheduleNextKpsExpiryLocked();
             }
-
-            RemoveExpired(route.Input.Timestamp);
         }
 
         Changed?.Invoke();
@@ -121,8 +137,7 @@ public sealed class KeyStateService
         {
             lock (_gate)
             {
-                RemoveExpired(DateTimeOffset.UtcNow);
-                return _recentPresses.Count;
+                return _kpsCounter.Count;
             }
         }
     }
@@ -133,7 +148,7 @@ public sealed class KeyStateService
         {
             _document.KeyCounts.Clear();
             _document.TotalPressCount = 0;
-            _recentPresses.Clear();
+            ClearKpsLocked();
         }
 
         Changed?.Invoke();
@@ -149,12 +164,66 @@ public sealed class KeyStateService
         Changed?.Invoke();
     }
 
-    private void RemoveExpired(DateTimeOffset now)
+    public void Dispose()
     {
-        var threshold = now - TimeSpan.FromSeconds(1);
-        while (_recentPresses.TryPeek(out var timestamp) && timestamp < threshold)
+        lock (_gate)
         {
-            _recentPresses.Dequeue();
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _kpsExpiryTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
+
+        _kpsExpiryTimer.Dispose();
+    }
+
+    private void OnKpsExpiry(object? state)
+    {
+        var changed = false;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            var current = _kpsCounter.Count;
+            changed = current != _lastPublishedKps;
+            _lastPublishedKps = current;
+            ScheduleNextKpsExpiryLocked();
+        }
+
+        if (changed)
+        {
+            // KPS decay is visual-only. Do not schedule a configuration save just
+            // because an item naturally left the one-second sliding window.
+            TransientChanged?.Invoke();
+        }
+    }
+
+    private void ScheduleNextKpsExpiryLocked()
+    {
+        var delay = _kpsCounter.TimeUntilNextExpiry;
+        if (delay is null)
+        {
+            _kpsExpiryTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            return;
+        }
+
+        // Keep a small floor for timer-resolution rounding; the callback rechecks
+        // the monotonic window before publishing a value.
+        _kpsExpiryTimer.Change(
+            delay.Value < TimeSpan.FromMilliseconds(1) ? TimeSpan.FromMilliseconds(1) : delay.Value,
+            Timeout.InfiniteTimeSpan);
+    }
+
+    private void ClearKpsLocked()
+    {
+        _kpsCounter.Clear();
+        _lastPublishedKps = 0;
+        _kpsExpiryTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 }
