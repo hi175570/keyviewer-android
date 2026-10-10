@@ -17,12 +17,12 @@ KeyViewer 可以在后台读取实体键盘输入，把按键状态、每键计�
 
 | 平台 | 发布包 | 输入后端 | 当前状态 |
 | --- | --- | --- | --- |
-| Windows 10/11 x64 | `KeyViewer-Windows-x64.exe` | 全局低级键盘钩子 | 主要支持平台；单文件、自带运行时，支持后台监听、拦截与映射 |
+| Windows 10/11 x64 | `KeyViewer-Windows-x64` 目录包 | 全局低级键盘钩子 | 主要支持平台；普通 .NET 目录结构与外置 BepInEx 模组框架，支持后台监听、拦截与映射 |
 | Android 7.0+ arm64 | `KeyViewer-Android-arm64.apk` | 无障碍（默认）/ Shizuku / Root-Sui | 默认免配对显示实体键盘、计数、KPS 与键雨；Shizuku 或 UID 0 的 Sui 后端提供拦截与映射 |
 | Android x86_64 | `KeyViewer-Android-x86_64.apk` | 同上 | 用于 x86_64 模拟器，不适用于普通 ARM 手机 |
 | Linux x64 | `KeyViewer-Linux-x64.tar.gz` | `evdev` + `uinput` | 实验性支持；需要 `/dev/input` 读取权限，拦截/映射还需要 `/dev/uinput` 写入权限 |
 
-发布包请从 [GitHub Releases](https://github.com/leoleo0980627-web/keyviewer-android/releases/latest) 下载。Windows EXE 与 Linux 包为自包含构建，不需要另行安装 .NET；Android APK 目前为项目签名的侧载包，不通过应用商店分发。
+发布包请从 [GitHub Releases](https://github.com/leoleo0980627-web/keyviewer-android/releases/latest) 下载。当前 Windows 普通目录包需要 .NET 10 Desktop Runtime，Linux 发布包为自包含构建；Android APK 目前为项目签名的侧载包，不通过应用商店分发。
 
 Android 三种后端的能力边界如下：
 
@@ -32,7 +32,7 @@ Android 三种后端的能力边界如下：
 | Shizuku | 安装并启动 Shizuku，非 Root 设备通常需无线调试配对并授权 KeyViewer | 支持 | 在 ROM 允许访问 `/dev/input` 与 `/dev/uinput` 时支持 |
 | Root / Sui | Root 设备安装 Magisk Sui 并授权，后端 UID 必须为 0 | 支持 | 设计为完整功能且免无线调试配对；仍需在真实 Root 设备验证 ROM 兼容性 |
 
-当前源码状态已经通过 79 个核心测试、Windows Release 构建、Android Bridge lint，以及 arm64/x86_64 Release APK 构建。Android API 30 x86_64 模拟器已验证冷启动、无障碍实体按键计数与 KPS 自动回零；Samsung SM-A326BR（Android 13、arm64）已验证侧载、受限设置处理、无障碍服务绑定、沉浸式全屏，以及应用前台悬浮窗拖动。Root / Sui 仍明确保留为待 Root 真机验证路径。
+当前源码状态已经通过 86 个核心与模组框架测试、Windows Release 构建、Android Bridge lint，以及 arm64/x86_64 Release APK 构建。Android API 30 x86_64 模拟器已验证冷启动、无障碍实体按键计数与 KPS 自动回零；Samsung SM-A326BR（Android 13、arm64）已验证侧载、受限设置处理、无障碍服务绑定、沉浸式全屏，以及应用前台悬浮窗拖动。Root / Sui 仍明确保留为待 Root 真机验证路径。
 
 ## 功能概览
 
@@ -55,6 +55,7 @@ Android 三种后端的能力边界如下：
 - 内置 ADOFAI、MapleStory Bold 与系统字体选择；也可把 OTF/TTF 字体导入配置。
 - 支持 PNG、JPEG、WebP、GIF 按键图片，并可选择图片是否取代键名。
 - KPS/TOTAL 支持单行/换行、文字与数值独立样式、全大写/首字母大写/全小写。
+- 全局面板可启用外置“液态玻璃按键”模组：Windows 11 悬浮窗通过 `HostBackdrop → CompositionVisualSurface` 取得桌面、游戏或其他窗口的真实后方像素，再以多层凸透镜位移、玻璃边缘、高光、软阴影和按压形变重新合成每个按键；它不会拿 KeyViewer 自己已绘制的画布假装折射。文字与图片仍由 Avalonia 独立绘制并保持锐利。此模式会增加 GPU 合成负载，关闭后不建立按键透镜。
 
 ### 键雨与统计
 
@@ -95,21 +96,23 @@ Android 三种后端的能力边界如下：
 
 ### 插件与游戏桥接
 
-仓库包含实验性的 C# 插件 API、示例插件与 BepInEx 6 桥接：
+仓库包含 C# 模组 API、外置框架、示例模组与 BepInEx 6 游戏桥接：
 
 - `KeyViewer.Abstractions`：稳定的小型输入事件、过滤器与插件接口层，目标框架为 `netstandard2.0`。
 - `KeyViewer.SamplePlugin`：最小输入过滤器示例。
+- `KeyViewer.ModFramework`：从程序同级 `BepInEx/patchers` 与 `BepInEx/plugins` 发现、隔离加载和安全卸载模组；框架 DLL 位于 `BepInEx/core`，不会编译进 EXE。Windows 包的普通托管依赖统一放在 `Managed`，Skia/HarfBuzz 等原生依赖放在 `Native`。
+- `KeyViewer.LiquidGlassPlugin`：首个视觉模组，通过平台无关的按键表面样式接口改变全部按键渲染。
 - `KeyViewer.BepInExBridge`：通过命名管道把游戏内事件送到桌面端；其他模组可调用 `KeyViewerBridge.PublishKey()`。
-- 插件可放入数据目录的 `Plugins`，或程序旁的 `Plugins` 目录。
+- 普通模组放入程序旁 `BepInEx/plugins`，预加载补丁放入 `BepInEx/patchers`；用户数据目录中的 `Plugins` 仍作为个人模组目录读取。
 
-插件系统当前主要用于输入事件与路由扩展，还不是任意改写整个 UI 的稳定模组 SDK；插件 API 版本目前为 `1.0`。
+模组 API `1.0` 当前支持输入过滤、路由事件、主程序服务与声明式按键表面渲染。视觉模组只返回平台无关材质参数，因此不会把 Avalonia 或 Windows API 强塞进模组接口；Windows 11 悬浮窗可把这些参数交给原生外部背景合成器，其他平台会安全回退到普通按键渲染。
 
 ## 安装与首次使用
 
 ### Windows
 
-1. 从 Releases 下载 `KeyViewer-Windows-x64.exe`。
-2. 直接运行 EXE。它是未进行商业代码签名的独立单文件，Windows SmartScreen 可能第一次显示提示。
+1. 从 Releases 下载并完整解压 `KeyViewer-Windows-x64` 目录包。
+2. 安装 .NET 10 Desktop Runtime 后运行目录内 `KeyViewer.Desktop.exe`。不要只把 EXE 单独复制走；`Managed`、`Native`、`BepInEx`、运行时配置以及 `winhttp.dll` 都是程序组成部分。程序未进行商业代码签名，Windows SmartScreen 可能第一次显示提示。
 3. 点击按键，打开“按键设置”，再点“绑定按键”，随后按下实体键盘上的目标键。
 4. 点击“开启悬浮窗”查看透明输出；不需要时关闭悬浮窗或退出主程序。
 
@@ -188,9 +191,13 @@ dotnet restore .\desktop\KeyViewer.Desktop.sln
 dotnet build .\desktop\src\KeyViewer.Desktop\KeyViewer.Desktop.csproj -c Release
 dotnet test .\desktop\tests\KeyViewer.Core.Tests\KeyViewer.Core.Tests.csproj -c Release
 
-# Windows x64 自包含单文件
+# Windows 普通 .NET 目录（当前发布形式，不要启用 PublishSingleFile）
 dotnet publish .\desktop\src\KeyViewer.Desktop\KeyViewer.Desktop.csproj `
-  -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+  -c Release --self-contained false
+
+# 可选：Windows x64 自包含目录，仍然不是单文件
+dotnet publish .\desktop\src\KeyViewer.Desktop\KeyViewer.Desktop.csproj `
+  -c Release -r win-x64 --self-contained true
 
 # Linux x64 自包含目录
 dotnet publish .\desktop\src\KeyViewer.Desktop\KeyViewer.Desktop.csproj `
@@ -230,6 +237,8 @@ dotnet publish $androidProject -c Release -r android-x64 --no-restore `
    ├─ src/KeyViewer.UI           # Windows/Android/Linux 共用 Avalonia UI
    ├─ src/KeyViewer.Desktop      # Windows/Linux 桌面入口和悬浮窗
    ├─ src/KeyViewer.Android      # Avalonia Android 入口和悬浮窗服务
+   ├─ src/KeyViewer.ModFramework # 外置模组加载器与服务注册表
+   ├─ src/KeyViewer.LiquidGlassPlugin # 液态玻璃按键视觉模组
    ├─ src/KeyViewer.BepInExBridge
    ├─ src/KeyViewer.SamplePlugin
    └─ tests/KeyViewer.Core.Tests

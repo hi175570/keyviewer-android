@@ -92,11 +92,86 @@ public interface IPluginContext
 {
     string DataDirectory { get; }
     IDisposable RegisterInputFilter(IInputFilter filter);
+    IDisposable RegisterKeySurfaceEffect(IKeySurfaceEffect effect);
     IDisposable SubscribeRoutedInput(Action<KeyRouteContext> handler);
     void LogInfo(string message);
     void LogWarning(string message);
     void LogError(string message, Exception? exception = null);
     object? GetService(Type serviceType);
+}
+
+/// <summary>
+/// Rendering-neutral information about one key surface. The contract deliberately
+/// avoids framework types so a visual plugin can run in the shared Windows/Android UI.
+/// </summary>
+public sealed class KeySurfaceContext
+{
+    public KeySurfaceContext(
+        string keyId,
+        bool isPressed,
+        bool darkMode,
+        double width,
+        double height,
+        double cornerRadius,
+        int fillColor,
+        int borderColor)
+    {
+        KeyId = keyId ?? string.Empty;
+        IsPressed = isPressed;
+        DarkMode = darkMode;
+        Width = width;
+        Height = height;
+        CornerRadius = cornerRadius;
+        FillColor = fillColor;
+        BorderColor = borderColor;
+    }
+
+    public string KeyId { get; }
+    public bool IsPressed { get; }
+    public bool DarkMode { get; }
+    public double Width { get; }
+    public double Height { get; }
+    public double CornerRadius { get; }
+    public int FillColor { get; }
+    public int BorderColor { get; }
+}
+
+/// <summary>
+/// Declarative glass material returned by a rendering plugin and interpreted by
+/// the host renderer. Colors use ARGB32, matching KeyViewer configuration colors.
+/// </summary>
+public sealed class KeySurfaceStyle
+{
+    public int BaseColor { get; set; }
+    public int MidColor { get; set; }
+    public int DepthColor { get; set; }
+    public int SpecularColor { get; set; }
+    public int RimLightColor { get; set; }
+    public int RimShadeColor { get; set; }
+    public int ShadowColor { get; set; }
+    public int GlowColor { get; set; }
+    public double SurfaceOpacity { get; set; } = 0.72;
+    public double RefractionStrength { get; set; } = 1;
+    public double BackdropBlurRadius { get; set; } = 1.4;
+    public double ChromaticAberration { get; set; } = 0.8;
+    public double SpecularStrength { get; set; } = 1;
+    public double ShadowDepth { get; set; } = 5;
+    public double PressInset { get; set; } = 1.2;
+    public double CornerRadiusBoost { get; set; } = 4;
+}
+
+public interface IKeySurfaceEffect
+{
+    string Id { get; }
+    int Priority { get; }
+    bool TryCreateStyle(KeySurfaceContext context, out KeySurfaceStyle style);
+}
+
+public interface IKeySurfaceEffectRegistry
+{
+    IReadOnlyList<string> EffectIds { get; }
+    IDisposable Register(IKeySurfaceEffect effect);
+    bool TryCreateStyle(KeySurfaceContext context, out KeySurfaceStyle style);
 }
 
 public interface IKeyViewerPlugin : IDisposable

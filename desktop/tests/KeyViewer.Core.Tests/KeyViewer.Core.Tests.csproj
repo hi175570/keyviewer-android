@@ -15,5 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\KeyViewer.Core\KeyViewer.Core.csproj" />
     <ProjectReference Include="..\..\src\KeyViewer.SamplePlugin\KeyViewer.SamplePlugin.csproj" />
+    <ProjectReference Include="..\..\src\KeyViewer.ModFramework\KeyViewer.ModFramework.csproj" />
+    <ProjectReference Include="..\..\src\KeyViewer.LiquidGlassPlugin\KeyViewer.LiquidGlassPlugin.csproj" />
   </ItemGroup>
 </Project>

@@ -378,6 +378,36 @@ public sealed partial class KeyViewerMainView : UserControl
         };
         stack.Children.Add(dark);
 
+        stack.Children.Add(Section("渲染模组"));
+        const string liquidGlassEffectId = "io.keyviewer.liquid-glass";
+        var liquidGlassAvailable = _host.SurfaceEffects.EffectIds.Contains(
+            liquidGlassEffectId,
+            StringComparer.OrdinalIgnoreCase);
+        var liquidGlass = new ToggleSwitch
+        {
+            Content = "液态玻璃按键",
+            IsChecked = settings.LiquidGlassEnabled,
+            IsEnabled = liquidGlassAvailable
+        };
+        liquidGlass.IsCheckedChanged += (_, _) =>
+        {
+            settings.LiquidGlassEnabled = liquidGlass.IsChecked == true && liquidGlassAvailable;
+            _host.NotifyEdited();
+        };
+        stack.Children.Add(liquidGlass);
+        stack.Children.Add(Hint(liquidGlassAvailable
+            ? "已由独立模组提供：Windows 悬浮窗直接采样桌面或游戏的真实后方画面，再以多层凸透镜位移、玻璃边缘、高光、软阴影和按压形变重新合成。不是折射 KV 自己的画布；此模式会增加 GPU 合成负载。"
+            : "液态玻璃模组未加载。请检查程序旁 BepInEx/plugins 目录。"));
+        foreach (var plugin in _host.PluginHost.Plugins)
+        {
+            stack.Children.Add(Hint(plugin.IsLoaded
+                ? $"● {plugin.Name} {plugin.Version}"
+                : $"○ {plugin.Name}：{plugin.Error}"));
+        }
+        var installPlugin = new Button { Content = "安装模组 DLL" };
+        installPlugin.Click += async (_, _) => await InstallPluginAsync();
+        stack.Children.Add(installPlugin);
+
         stack.Children.Add(Section("应用背景图片"));
         var backgroundRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var chooseBackground = new Button { Content = string.IsNullOrEmpty(settings.BackgroundImageAsset) ? "选择背景图" : "背景图已设置" };

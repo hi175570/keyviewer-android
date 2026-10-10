@@ -279,4 +279,32 @@ public sealed class ConfigSerializerTests
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
         }
     }
+
+    [Fact]
+    public void Jipper_16K_alignment_preserves_the_P_equal_and_RAlt_dot_spacing()
+    {
+        var document = ConfigSerializer.LoadEmbeddedPreset("Jipper 16K");
+        var originalCenters = document.Keys.ToDictionary(
+            key => key.BoundKey,
+            key => (key.CenterX, key.CenterY),
+            StringComparer.OrdinalIgnoreCase);
+
+        var result = KeyViewerLayoutGrid.AlignDocument(document);
+
+        Assert.False(result.Changed);
+        Assert.Equal(originalCenters, document.Keys.ToDictionary(
+            key => key.BoundKey,
+            key => (key.CenterX, key.CenterY),
+            StringComparer.OrdinalIgnoreCase));
+        Assert.Equal(
+            KeyViewerLayoutGrid.Size * 8,
+            document.Keys.Single(key => key.BoundKey == "equal").CenterX
+                - document.Keys.Single(key => key.BoundKey == "p").CenterX,
+            3);
+        Assert.Equal(
+            KeyViewerLayoutGrid.Size * 8,
+            document.Keys.Single(key => key.BoundKey == "dot").CenterX
+                - document.Keys.Single(key => key.BoundKey == "ralt").CenterX,
+            3);
+    }
 }

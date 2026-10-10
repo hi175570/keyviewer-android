@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>KeyViewer.ModFramework</AssemblyName>
+    <RootNamespace>KeyViewer.ModFramework</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
+    <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
+  </ItemGroup>
+</Project>

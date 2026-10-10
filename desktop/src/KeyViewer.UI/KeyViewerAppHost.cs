@@ -2,13 +2,14 @@ using KeyViewer.Abstractions;
 using KeyViewer.Core.Config;
 using KeyViewer.Core.Input;
 using KeyViewer.Core.Models;
-using KeyViewer.Core.Plugins;
+using KeyViewer.ModFramework;
 using System.Text.Json;
 
 namespace KeyViewer.UI;
 
 public sealed class KeyViewerAppHost : IDisposable
 {
+    private const string BundledPresetVersion = "2";
     private readonly object _saveGate = new();
     private readonly Timer _saveTimer;
     private readonly string _activeConfigPath;
@@ -23,6 +24,9 @@ public sealed class KeyViewerAppHost : IDisposable
         DataRoot = GetDataRoot();
         AssetRoot = Path.Combine(DataRoot, "Assets");
         PluginRoot = Path.Combine(DataRoot, "Plugins");
+        FrameworkRoot = Path.Combine(AppContext.BaseDirectory, "BepInEx");
+        FrameworkPatchRoot = Path.Combine(FrameworkRoot, "patchers");
+        FrameworkPluginRoot = Path.Combine(FrameworkRoot, "plugins");
         ConfigRoot = Path.Combine(DataRoot, "Configs");
         ConfigPath = Path.Combine(DataRoot, "current.kv.json");
         _activeConfigPath = Path.Combine(DataRoot, "active-config.txt");
@@ -54,6 +58,9 @@ public sealed class KeyViewerAppHost : IDisposable
         Services.Add(typeof(KeyViewerDocument), Document);
         Services.Add(typeof(InputRouter), Router);
         Services.Add(typeof(KeyStateService), State);
+        SurfaceEffects = new KeySurfaceEffectRegistry();
+        Services.Add(typeof(IKeySurfaceEffectRegistry), SurfaceEffects);
+        Services.Add(typeof(KeySurfaceEffectRegistry), SurfaceEffects);
         PluginHost = new PluginHost(Router, Services, Path.Combine(DataRoot, "PluginData"), Log);
         _saveTimer = new Timer(_ => SaveNowSafe(), null, Timeout.Infinite, Timeout.Infinite);
         // Loading and serializing a portable configuration can include embedded fonts and images.
@@ -67,13 +74,23 @@ public sealed class KeyViewerAppHost : IDisposable
         State.Changed += OnStateChanged;
         State.TransientChanged += OnTransientStateChanged;
         StartInputSources();
+        if (Directory.Exists(FrameworkPatchRoot))
+        {
+            PluginHost.LoadDirectory(FrameworkPatchRoot);
+        }
+        if (Directory.Exists(FrameworkPluginRoot))
+        {
+            PluginHost.LoadDirectory(FrameworkPluginRoot);
+        }
         PluginHost.LoadDirectory(PluginRoot);
-        PluginHost.LoadDirectory(Path.Combine(AppContext.BaseDirectory, "Plugins"));
     }
 
     public string DataRoot { get; }
     public string AssetRoot { get; }
     public string PluginRoot { get; }
+    public string FrameworkRoot { get; }
+    public string FrameworkPatchRoot { get; }
+    public string FrameworkPluginRoot { get; }
     public string ConfigRoot { get; }
     public string ConfigPath { get; }
     public string CurrentConfigName => _currentConfigName;
@@ -82,6 +99,7 @@ public sealed class KeyViewerAppHost : IDisposable
     public KeyStateService State { get; }
     public KeyViewerRuntime Runtime { get; }
     public ServiceRegistry Services { get; }
+    public KeySurfaceEffectRegistry SurfaceEffects { get; }
     public PluginHost PluginHost { get; }
     public event Action? Changed;
     public event Action<string>? LogMessage;
@@ -376,19 +394,35 @@ public sealed class KeyViewerAppHost : IDisposable
     private void EnsureBundledPresets()
     {
         if (File.Exists(_bundledPresetVersionPath)
-            && File.ReadAllText(_bundledPresetVersionPath).Trim() == "1")
+            && File.ReadAllText(_bundledPresetVersionPath).Trim() == BundledPresetVersion)
         {
             return;
         }
         foreach (var preset in ConfigSerializer.BundledPresets)
         {
             var path = NamedConfigurationPath(preset.Name);
-            if (File.Exists(path)) continue;
-            var document = ConfigSerializer.LoadEmbeddedPreset(preset.Name);
-            KeyViewerLayoutGrid.AlignDocument(document);
-            ConfigSerializer.SaveConfiguration(path, document);
+            var canonicalPreset = ConfigSerializer.LoadEmbeddedPreset(preset.Name);
+            if (!File.Exists(path))
+            {
+                KeyViewerLayoutGrid.AlignDocument(canonicalPreset);
+                ConfigSerializer.SaveConfiguration(path, canonicalPreset);
+                continue;
+            }
+
+            try
+            {
+                var existing = ConfigSerializer.Load(path);
+                if (KeyViewerLayoutGrid.RepairBundledPresetGridMigration(existing, canonicalPreset) > 0)
+                {
+                    ConfigSerializer.SaveConfiguration(path, existing);
+                }
+            }
+            catch (Exception exception)
+            {
+                Log($"Bundled preset migration skipped for {preset.Name}: {exception.Message}");
+            }
         }
-        File.WriteAllText(_bundledPresetVersionPath, "1");
+        File.WriteAllText(_bundledPresetVersionPath, BundledPresetVersion);
     }
 
     private IReadOnlyList<string> LoadConfigurationOrder()

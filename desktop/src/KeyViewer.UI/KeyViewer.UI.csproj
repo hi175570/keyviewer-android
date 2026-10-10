@@ -10,11 +10,14 @@
     <PackageReference Include="Avalonia" Version="12.1.0" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
     <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
+    <ProjectReference Include="..\KeyViewer.ModFramework\KeyViewer.ModFramework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

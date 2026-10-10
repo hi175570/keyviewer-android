@@ -1,12 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
     <AssemblyName>KeyViewer.Desktop</AssemblyName>
     <RootNamespace>KeyViewer.Desktop</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon Condition="Exists('Assets\KeyViewer.ico')">Assets\KeyViewer.ico</ApplicationIcon>
+    <!-- Deliberately publish as a normal .NET directory. The framework and
+         plugins must remain replaceable files beside the executable. -->
+    <PublishSingleFile>false</PublishSingleFile>
   </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Remove="WindowsLiquidGlassCompositionHost.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
+    <Compile Remove="WindowsLiquidGlassCompositionHost.Stub.cs" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.0" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
@@ -18,10 +27,60 @@
     <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
     <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
     <ProjectReference Include="..\KeyViewer.UI\KeyViewer.UI.csproj" />
+    <ProjectReference Include="..\KeyViewer.LiquidGlassPlugin\KeyViewer.LiquidGlassPlugin.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\app\src\main\res\mipmap-xxxhdpi\ic_launcher.png"
                       Link="Assets\icon.png"
                       LogicalName="KeyViewer.Desktop.Assets.icon.png" />
   </ItemGroup>
+  <Target Name="CreateModFrameworkLayout"
+          AfterTargets="Publish"
+          Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
+    <PropertyGroup>
+      <ManagedPublishRoot>$(PublishDir)Managed\</ManagedPublishRoot>
+      <NativePublishRoot>$(PublishDir)Native\</NativePublishRoot>
+      <ModFrameworkPublishRoot>$(PublishDir)BepInEx\</ModFrameworkPublishRoot>
+      <ModFrameworkCoreRoot>$(ModFrameworkPublishRoot)core\</ModFrameworkCoreRoot>
+      <DoorstopNoticeRoot>$(ModFrameworkPublishRoot)doorstop\</DoorstopNoticeRoot>
+      <ModFrameworkPatchRoot>$(ModFrameworkPublishRoot)patchers\</ModFrameworkPatchRoot>
+      <ModFrameworkPluginRoot>$(ModFrameworkPublishRoot)plugins\</ModFrameworkPluginRoot>
+      <LiquidGlassOutputRoot>$(MSBuildProjectDirectory)\..\KeyViewer.LiquidGlassPlugin\bin\$(Configuration)\net8.0\</LiquidGlassOutputRoot>
+      <DoorstopSourceRoot>$(MSBuildProjectDirectory)\..\..\third_party\UnityDoorstop\4.4.1\</DoorstopSourceRoot>
+    </PropertyGroup>
+    <MakeDir Directories="$(ManagedPublishRoot);$(NativePublishRoot);$(ModFrameworkCoreRoot);$(DoorstopNoticeRoot);$(ModFrameworkPatchRoot);$(ModFrameworkPluginRoot)" />
+    <ItemGroup>
+      <FrameworkCoreFiles Include="$(PublishDir)KeyViewer.ModFramework.dll" />
+      <FrameworkCoreFiles Include="$(PublishDir)KeyViewer.ModFramework.pdb" Condition="Exists('$(PublishDir)KeyViewer.ModFramework.pdb')" />
+      <NativePublishFiles Include="$(PublishDir)av_libglesv2.dll" Condition="Exists('$(PublishDir)av_libglesv2.dll')" />
+      <NativePublishFiles Include="$(PublishDir)libHarfBuzzSharp.dll" Condition="Exists('$(PublishDir)libHarfBuzzSharp.dll')" />
+      <NativePublishFiles Include="$(PublishDir)libSkiaSharp.dll" Condition="Exists('$(PublishDir)libSkiaSharp.dll')" />
+      <ManagedPublishFiles Include="$(PublishDir)*.dll"
+                           Exclude="$(PublishDir)KeyViewer.Desktop.dll;$(PublishDir)KeyViewer.ModFramework.dll;@(NativePublishFiles)" />
+      <ManagedSymbolFiles Include="$(PublishDir)*.pdb"
+                          Exclude="$(PublishDir)KeyViewer.ModFramework.pdb" />
+      <BundledPluginFiles Include="$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.dll" />
+      <BundledPluginFiles Include="$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.pdb" Condition="Exists('$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.pdb')" />
+      <DoorstopFiles Include="$(DoorstopSourceRoot)winhttp.dll" />
+      <DoorstopFiles Include="$(DoorstopSourceRoot)doorstop_config.ini" />
+      <DoorstopFiles Include="$(DoorstopSourceRoot).doorstop_version" />
+      <DoorstopNoticeFiles Include="$(DoorstopSourceRoot)LICENSE" />
+      <DoorstopNoticeFiles Include="$(DoorstopSourceRoot)README-KeyViewer.txt" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(PublishDir)KeyViewer.ModFramework.dll')"
+           Text="The mod framework was not produced during publish." />
+    <Error Condition="!Exists('$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.dll')"
+           Text="The bundled Liquid Glass plugin was not built." />
+    <Error Condition="!Exists('$(DoorstopSourceRoot)winhttp.dll')"
+           Text="Unity Doorstop winhttp.dll is missing from the third-party source directory." />
+    <Move SourceFiles="@(FrameworkCoreFiles)" DestinationFolder="$(ModFrameworkCoreRoot)" />
+    <Move SourceFiles="@(ManagedPublishFiles)" DestinationFolder="$(ManagedPublishRoot)" />
+    <Move SourceFiles="@(ManagedSymbolFiles)" DestinationFolder="$(ManagedPublishRoot)" />
+    <Move SourceFiles="@(NativePublishFiles)" DestinationFolder="$(NativePublishRoot)" />
+    <Copy SourceFiles="@(BundledPluginFiles)" DestinationFolder="$(ModFrameworkPluginRoot)" />
+    <Copy SourceFiles="@(DoorstopFiles)" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="@(DoorstopNoticeFiles)" DestinationFolder="$(DoorstopNoticeRoot)" />
+  </Target>
 </Project>

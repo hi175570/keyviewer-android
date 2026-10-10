@@ -11,6 +11,7 @@
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <supportedOS Id="{4f476546-937a-4f41-8c63-42e5f595edb5}" />
+      <maxversiontested Id="10.0.26100.0" />
     </application>
   </compatibility>
 </assembly>

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -27,6 +28,8 @@ public sealed class OverlayWindow : Window
 
     private readonly KeyViewerAppHost _host;
     private readonly KeyCanvasControl _canvas;
+    private readonly DispatcherTimer _liquidGlassTimer;
+    private WindowsLiquidGlassCompositionHost? _liquidGlassHost;
     private Point _dragStartScreen;
     private PixelPoint _dragStartWindow;
     private bool _pointerDown;
@@ -50,6 +53,11 @@ public sealed class OverlayWindow : Window
             DrawGrid = false
         };
         _canvas.Attach(host);
+        _liquidGlassTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(1000d / 60)
+        };
+        _liquidGlassTimer.Tick += (_, _) => UpdateNativeLiquidGlass();
         Content = _canvas;
         Position = new PixelPoint(
             host.Document.GlobalSettings.FloatWindowX,
@@ -65,11 +73,18 @@ public sealed class OverlayWindow : Window
             // open overlay that never appears.  ShowActivated already avoids
             // the initial focus steal; apply the stronger tool-window/no-
             // activate flags once the native show operation has completed.
-            Dispatcher.UIThread.Post(ApplyNativeOverlayStyles, DispatcherPriority.Loaded);
-            Dispatcher.UIThread.Post(RefreshLayout, DispatcherPriority.Loaded);
+            Dispatcher.UIThread.Post(() =>
+            {
+                ApplyNativeOverlayStyles();
+                RefreshLayout();
+                InitializeNativeLiquidGlass();
+            }, DispatcherPriority.Loaded);
         };
         Closed += (_, _) =>
         {
+            _liquidGlassTimer.Stop();
+            _liquidGlassHost?.Dispose();
+            _liquidGlassHost = null;
             _host.Changed -= OnHostChanged;
             _canvas.Dispose();
             SavePosition();
@@ -132,6 +147,48 @@ public sealed class OverlayWindow : Window
             new nint(extended | WsExToolWindow | WsExNoActivate));
         _ = SetWindowPos(handle, 0, 0, 0, 0, 0,
             SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
+    }
+
+    private void InitializeNativeLiquidGlass()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var handle = TryGetPlatformHandle()?.Handle ?? 0;
+        if (handle == 0)
+        {
+            return;
+        }
+
+        if (!WindowsLiquidGlassCompositionHost.TryCreate(handle, out _liquidGlassHost, out var error))
+        {
+            Debug.WriteLine($"Liquid Glass native backdrop unavailable: {error}");
+            _canvas.UseNativeLiquidGlassBackdrop = false;
+            _canvas.InvalidateVisual();
+            return;
+        }
+
+        _canvas.UseNativeLiquidGlassBackdrop = true;
+        _canvas.InvalidateVisual();
+        UpdateNativeLiquidGlass();
+        _liquidGlassTimer.Start();
+    }
+
+    private void UpdateNativeLiquidGlass()
+    {
+        if (_liquidGlassHost is null)
+        {
+            return;
+        }
+
+        var scaling = Math.Max(0.01, RenderScaling);
+        _liquidGlassHost.Update(
+            (float)Math.Max(1, Bounds.Width * scaling),
+            (float)Math.Max(1, Bounds.Height * scaling),
+            scaling,
+            _canvas.GetLiquidGlassVisuals());
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)

@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyViewer.UI", "src\KeyView
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyViewer.Android", "src\KeyViewer.Android\KeyViewer.Android.csproj", "{A8176139-626A-4925-AA23-E7CA4097E172}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyViewer.ModFramework", "src\KeyViewer.ModFramework\KeyViewer.ModFramework.csproj", "{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyViewer.LiquidGlassPlugin", "src\KeyViewer.LiquidGlassPlugin\KeyViewer.LiquidGlassPlugin.csproj", "{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +131,30 @@ Global
 		{A8176139-626A-4925-AA23-E7CA4097E172}.Release|x64.Build.0 = Release|Any CPU
 		{A8176139-626A-4925-AA23-E7CA4097E172}.Release|x86.ActiveCfg = Release|Any CPU
 		{A8176139-626A-4925-AA23-E7CA4097E172}.Release|x86.Build.0 = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|x64.Build.0 = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Debug|x86.Build.0 = Debug|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|x64.ActiveCfg = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|x64.Build.0 = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|x86.ActiveCfg = Release|Any CPU
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C}.Release|x86.Build.0 = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|x64.Build.0 = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Debug|x86.Build.0 = Debug|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|x64.ActiveCfg = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|x64.Build.0 = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|x86.ActiveCfg = Release|Any CPU
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,5 +162,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{452F7D71-FA65-42E6-A1B5-A50B44345FE0} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A8176139-626A-4925-AA23-E7CA4097E172} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A5D8F4A2-92B9-4DC4-B35A-1A90380D1F6C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{2D71E864-3EF5-4C57-A9F2-7F9B83544E3D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

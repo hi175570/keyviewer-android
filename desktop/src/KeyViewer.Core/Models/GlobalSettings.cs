@@ -11,6 +11,7 @@ public sealed class GlobalSettings
     public double GlobalRainCornerRadiusDp { get; set; } = 4;
     public int GlobalRainReserveHeightDp { get; set; } = 10;
     public bool DarkModeEnabled { get; set; }
+    public bool LiquidGlassEnabled { get; set; }
     public string BackgroundImageAsset { get; set; } = string.Empty;
     public bool KeyDebounceEnabled { get; set; }
     public int KeyDebounceMillis { get; set; } = 20;

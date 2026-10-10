@@ -8,7 +8,9 @@ using Avalonia.Media.Fonts;
 using Avalonia.Media.Imaging;
 using Avalonia.Rendering;
 using Avalonia.Threading;
+using KeyViewer.Abstractions;
 using KeyViewer.Core.Models;
+using KeyViewer.UI.Rendering;
 
 namespace KeyViewer.UI.Controls;
 
@@ -86,6 +88,7 @@ public sealed class KeyCanvasControl : Control, IDisposable
     public bool Editable { get; set; } = true;
     public bool DrawBackground { get; set; } = true;
     public bool DrawGrid { get; set; } = true;
+    public bool UseNativeLiquidGlassBackdrop { get; set; }
     public double Zoom { get; private set; } = 1;
     public Vector Pan { get; private set; }
     public Point ViewCenterWorld => ScreenToWorld(Bounds.Center);
@@ -125,6 +128,49 @@ public sealed class KeyCanvasControl : Control, IDisposable
     public event Action<KeyDefinition?>? SelectedKeyChanged;
     public event Action? SelectionChanged;
     public event Action? EditModeChanged;
+
+    public IReadOnlyList<LiquidGlassVisualGeometry> GetLiquidGlassVisuals()
+    {
+        if (_host is null
+            || !UseNativeLiquidGlassBackdrop
+            || !_host.Document.GlobalSettings.LiquidGlassEnabled)
+        {
+            return Array.Empty<LiquidGlassVisualGeometry>();
+        }
+
+        var visuals = new List<LiquidGlassVisualGeometry>(_host.Document.Keys.Count);
+        foreach (var key in _host.Document.Keys.OrderBy(key => key.ZIndex))
+        {
+            var pressed = _host.State.IsPressed(key.BoundKey);
+            var fillColor = pressed ? key.FillColorDown : key.FillColorUp;
+            var borderColor = pressed ? key.BorderColorDown : key.BorderColorUp;
+            var surfaceContext = new KeySurfaceContext(
+                key.Id,
+                pressed,
+                _host.Document.GlobalSettings.DarkModeEnabled,
+                key.Width,
+                key.Height,
+                key.CornerRadiusDp,
+                fillColor,
+                borderColor);
+            if (!_host.SurfaceEffects.TryCreateStyle(surfaceContext, out var style))
+            {
+                continue;
+            }
+
+            var rect = WorldRectToScreen(key);
+            var inset = pressed ? Math.Max(0, style.PressInset * Zoom) : 0;
+            var surface = inset > 0 && rect.Width > inset * 2 && rect.Height > inset * 2
+                ? rect.Deflate(inset)
+                : rect;
+            var radius = Math.Min(
+                Math.Max(0, key.CornerRadiusDp * Zoom + style.CornerRadiusBoost * Zoom),
+                Math.Min(surface.Width, surface.Height) / 2);
+            visuals.Add(new LiquidGlassVisualGeometry(key.Id, surface, radius, style, pressed));
+        }
+
+        return visuals;
+    }
 
     public void Attach(KeyViewerAppHost host)
     {
@@ -588,11 +634,31 @@ public sealed class KeyCanvasControl : Control, IDisposable
         var pressed = _host.State.IsPressed(key.BoundKey);
         var rect = WorldRectToScreen(key);
         var radius = key.CornerRadiusDp * Zoom;
-        var fill = new SolidColorBrush(ToColor(pressed ? key.FillColorDown : key.FillColorUp));
-        var border = new Pen(
-            new SolidColorBrush(ToColor(pressed ? key.BorderColorDown : key.BorderColorUp)),
-            Math.Max(0.5, key.BorderWidthDp * Zoom));
-        context.DrawRectangle(fill, null, rect, radius, radius);
+        var fillColor = pressed ? key.FillColorDown : key.FillColorUp;
+        var borderColor = pressed ? key.BorderColorDown : key.BorderColorUp;
+        var glassRendered = false;
+        if (_host.Document.GlobalSettings.LiquidGlassEnabled && UseNativeLiquidGlassBackdrop)
+        {
+            var surfaceContext = new KeySurfaceContext(
+                key.Id,
+                pressed,
+                _host.Document.GlobalSettings.DarkModeEnabled,
+                key.Width,
+                key.Height,
+                key.CornerRadiusDp,
+                fillColor,
+                borderColor);
+            if (_host.SurfaceEffects.TryCreateStyle(surfaceContext, out var style))
+            {
+                DrawLiquidGlassSurface(context, rect, radius, key.BorderWidthDp * Zoom, style, pressed);
+                glassRendered = true;
+            }
+        }
+
+        if (!glassRendered)
+        {
+            context.DrawRectangle(new SolidColorBrush(ToColor(fillColor)), null, rect, radius, radius);
+        }
 
         var image = ResolveBitmap(key.ImageAsset);
         var imageDrawn = false;
@@ -610,7 +676,13 @@ public sealed class KeyCanvasControl : Control, IDisposable
             imageDrawn = true;
         }
 
-        context.DrawRectangle(null, border, rect, radius, radius);
+        if (!glassRendered)
+        {
+            var border = new Pen(
+                new SolidColorBrush(ToColor(borderColor)),
+                Math.Max(0.5, key.BorderWidthDp * Zoom));
+            context.DrawRectangle(null, border, rect, radius, radius);
+        }
 
         if (!imageDrawn || !key.ImageReplacesLabel)
         {
@@ -630,6 +702,25 @@ public sealed class KeyCanvasControl : Control, IDisposable
                 key.CountOffsetYDp * Zoom,
                 fontFamily: FontFor(key));
         }
+    }
+
+    private void DrawLiquidGlassSurface(
+        DrawingContext context,
+        Rect rect,
+        double configuredRadius,
+        double configuredBorderWidth,
+        KeySurfaceStyle style,
+        bool pressed)
+    {
+        _ = configuredBorderWidth;
+        var inset = pressed ? Math.Max(0, style.PressInset * Zoom) : 0;
+        var surface = inset > 0 && rect.Width > inset * 2 && rect.Height > inset * 2
+            ? rect.Deflate(inset)
+            : rect;
+        var radius = Math.Min(
+            Math.Max(0, configuredRadius + style.CornerRadiusBoost * Zoom),
+            Math.Min(surface.Width, surface.Height) / 2);
+        context.Custom(new LiquidGlassChromeDrawOperation(surface, radius, style));
     }
 
     private void DrawKeyText(DrawingContext context, KeyDefinition key, Rect rect, bool pressed)
