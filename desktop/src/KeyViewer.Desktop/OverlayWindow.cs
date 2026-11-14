@@ -13,6 +13,7 @@ namespace KeyViewer.Desktop;
 
 public sealed class OverlayWindow : Window
 {
+    private const string LiquidGlassEffectId = "io.keyviewer.liquid-glass";
     private const int GwlStyle = -16;
     private const int GwlExStyle = -20;
     private const long WsThickFrame = 0x00040000L;
@@ -77,14 +78,12 @@ public sealed class OverlayWindow : Window
             {
                 ApplyNativeOverlayStyles();
                 RefreshLayout();
-                InitializeNativeLiquidGlass();
+                RefreshNativeLiquidGlassState();
             }, DispatcherPriority.Loaded);
         };
         Closed += (_, _) =>
         {
-            _liquidGlassTimer.Stop();
-            _liquidGlassHost?.Dispose();
-            _liquidGlassHost = null;
+            DisposeNativeLiquidGlass();
             _host.Changed -= OnHostChanged;
             _canvas.Dispose();
             SavePosition();
@@ -125,11 +124,20 @@ public sealed class OverlayWindow : Window
     }
 
     private void OnHostChanged()
-        => Dispatcher.UIThread.Post(RefreshLayout, DispatcherPriority.Background);
+        => Dispatcher.UIThread.Post(() =>
+        {
+            RefreshLayout();
+            RefreshNativeLiquidGlassState();
+        }, DispatcherPriority.Background);
 
     private void ApplyNativeOverlayStyles()
     {
-        if (!OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows()
+            || !_host.Document.GlobalSettings.LiquidGlassEnabled
+            || !_host.SurfaceEffects.EffectIds.Contains(
+                LiquidGlassEffectId,
+                StringComparer.OrdinalIgnoreCase)
+            || _liquidGlassHost is not null)
         {
             return;
         }
@@ -174,6 +182,32 @@ public sealed class OverlayWindow : Window
         _canvas.InvalidateVisual();
         UpdateNativeLiquidGlass();
         _liquidGlassTimer.Start();
+    }
+
+    private void RefreshNativeLiquidGlassState()
+    {
+        var available = _host.SurfaceEffects.EffectIds.Contains(
+            LiquidGlassEffectId,
+            StringComparer.OrdinalIgnoreCase);
+        if (!_host.Document.GlobalSettings.LiquidGlassEnabled || !available)
+        {
+            DisposeNativeLiquidGlass();
+            return;
+        }
+
+        InitializeNativeLiquidGlass();
+    }
+
+    private void DisposeNativeLiquidGlass()
+    {
+        _liquidGlassTimer.Stop();
+        _liquidGlassHost?.Dispose();
+        _liquidGlassHost = null;
+        if (_canvas.UseNativeLiquidGlassBackdrop)
+        {
+            _canvas.UseNativeLiquidGlassBackdrop = false;
+            _canvas.InvalidateVisual();
+        }
     }
 
     private void UpdateNativeLiquidGlass()
