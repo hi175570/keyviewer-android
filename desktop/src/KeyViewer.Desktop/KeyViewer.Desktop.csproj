@@ -27,9 +27,6 @@
     <ProjectReference Include="..\KeyViewer.Core\KeyViewer.Core.csproj" />
     <ProjectReference Include="..\KeyViewer.Abstractions\KeyViewer.Abstractions.csproj" />
     <ProjectReference Include="..\KeyViewer.UI\KeyViewer.UI.csproj" />
-    <ProjectReference Include="..\KeyViewer.LiquidGlassPlugin\KeyViewer.LiquidGlassPlugin.csproj"
-                      ReferenceOutputAssembly="false"
-                      Private="false" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\app\src\main\res\mipmap-xxxhdpi\ic_launcher.png"
@@ -47,7 +44,6 @@
       <DoorstopNoticeRoot>$(ModFrameworkPublishRoot)doorstop\</DoorstopNoticeRoot>
       <ModFrameworkPatchRoot>$(ModFrameworkPublishRoot)patchers\</ModFrameworkPatchRoot>
       <ModFrameworkPluginRoot>$(ModFrameworkPublishRoot)plugins\</ModFrameworkPluginRoot>
-      <LiquidGlassOutputRoot>$(MSBuildProjectDirectory)\..\KeyViewer.LiquidGlassPlugin\bin\$(Configuration)\net8.0\</LiquidGlassOutputRoot>
       <DoorstopSourceRoot>$(MSBuildProjectDirectory)\..\..\third_party\UnityDoorstop\4.4.1\</DoorstopSourceRoot>
     </PropertyGroup>
     <MakeDir Directories="$(ManagedPublishRoot);$(NativePublishRoot);$(ModFrameworkCoreRoot);$(DoorstopNoticeRoot);$(ModFrameworkPatchRoot);$(ModFrameworkPluginRoot)" />
@@ -61,8 +57,6 @@
                            Exclude="$(PublishDir)KeyViewer.Desktop.dll;$(PublishDir)KeyViewer.ModFramework.dll;@(NativePublishFiles)" />
       <ManagedSymbolFiles Include="$(PublishDir)*.pdb"
                           Exclude="$(PublishDir)KeyViewer.ModFramework.pdb" />
-      <BundledPluginFiles Include="$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.dll" />
-      <BundledPluginFiles Include="$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.pdb" Condition="Exists('$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.pdb')" />
       <DoorstopFiles Include="$(DoorstopSourceRoot)winhttp.dll" />
       <DoorstopFiles Include="$(DoorstopSourceRoot)doorstop_config.ini" />
       <DoorstopFiles Include="$(DoorstopSourceRoot).doorstop_version" />
@@ -71,15 +65,12 @@
     </ItemGroup>
     <Error Condition="!Exists('$(PublishDir)KeyViewer.ModFramework.dll')"
            Text="The mod framework was not produced during publish." />
-    <Error Condition="!Exists('$(LiquidGlassOutputRoot)KeyViewer.LiquidGlassPlugin.dll')"
-           Text="The bundled Liquid Glass plugin was not built." />
     <Error Condition="!Exists('$(DoorstopSourceRoot)winhttp.dll')"
            Text="Unity Doorstop winhttp.dll is missing from the third-party source directory." />
     <Move SourceFiles="@(FrameworkCoreFiles)" DestinationFolder="$(ModFrameworkCoreRoot)" />
     <Move SourceFiles="@(ManagedPublishFiles)" DestinationFolder="$(ManagedPublishRoot)" />
     <Move SourceFiles="@(ManagedSymbolFiles)" DestinationFolder="$(ManagedPublishRoot)" />
     <Move SourceFiles="@(NativePublishFiles)" DestinationFolder="$(NativePublishRoot)" />
-    <Copy SourceFiles="@(BundledPluginFiles)" DestinationFolder="$(ModFrameworkPluginRoot)" />
     <Copy SourceFiles="@(DoorstopFiles)" DestinationFolder="$(PublishDir)" />
     <Copy SourceFiles="@(DoorstopNoticeFiles)" DestinationFolder="$(DoorstopNoticeRoot)" />
   </Target>

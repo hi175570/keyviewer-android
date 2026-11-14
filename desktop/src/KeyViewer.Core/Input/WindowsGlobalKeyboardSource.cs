@@ -8,13 +8,28 @@ namespace KeyViewer.Core.Input;
 public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
 {
     private const int WhKeyboardLl = 13;
+    private const int WhMouseLl = 14;
     private const int WmKeyDown = 0x0100;
     private const int WmKeyUp = 0x0101;
     private const int WmSysKeyDown = 0x0104;
     private const int WmSysKeyUp = 0x0105;
+    private const int WmLeftButtonDown = 0x0201;
+    private const int WmLeftButtonUp = 0x0202;
+    private const int WmRightButtonDown = 0x0204;
+    private const int WmRightButtonUp = 0x0205;
+    private const int WmMiddleButtonDown = 0x0207;
+    private const int WmMiddleButtonUp = 0x0208;
     private const int WmQuit = 0x0012;
+    private const uint InputMouse = 0;
     private const uint InputKeyboard = 1;
     private const uint KeyeventfKeyup = 0x0002;
+    private const uint MouseeventfLeftdown = 0x0002;
+    private const uint MouseeventfLeftup = 0x0004;
+    private const uint MouseeventfRightdown = 0x0008;
+    private const uint MouseeventfRightup = 0x0010;
+    private const uint MouseeventfMiddledown = 0x0020;
+    private const uint MouseeventfMiddleup = 0x0040;
+    private const uint LowLevelMouseInjectedFlag = 0x00000001;
     private static readonly nuint SelfInjectionMarker = 0x4B56524D;
 
     private readonly object _gate = new();
@@ -23,19 +38,22 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
     private readonly Dictionary<uint, uint> _mappedSources = [];
     private readonly Dictionary<uint, int> _mappedTargetReferences = [];
     private readonly HashSet<uint> _injectedTargets = [];
-    private readonly LowLevelKeyboardProc _callback;
+    private readonly LowLevelKeyboardProc _keyboardCallback;
+    private readonly LowLevelMouseProc _mouseCallback;
     private Thread? _thread;
-    private nint _hook;
+    private nint _keyboardHook;
+    private nint _mouseHook;
     private uint _threadId;
     private ManualResetEventSlim? _started;
 
     public WindowsGlobalKeyboardSource()
     {
-        _callback = HookCallback;
+        _keyboardCallback = KeyboardHookCallback;
+        _mouseCallback = MouseHookCallback;
     }
 
     public string Id => "windows-global-keyboard";
-    public string DisplayName => "Windows 全局键盘（后台监听）";
+    public string DisplayName => "Windows 全局键盘/鼠标（后台监听）";
     public bool IsPassiveWhenUnmodified => true;
     public bool SupportsMapping => true;
     public bool IsRunning { get; private set; }
@@ -70,9 +88,9 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
             throw new TimeoutException("Windows 键盘钩子启动超时");
         }
 
-        if (_hook == 0)
+        if (_keyboardHook == 0 || _mouseHook == 0)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法安装 Windows 键盘钩子");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法安装 Windows 键盘/鼠标钩子");
         }
     }
 
@@ -110,11 +128,23 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         _threadId = GetCurrentThreadId();
         using var process = Process.GetCurrentProcess();
         using var module = process.MainModule;
-        _hook = SetWindowsHookEx(WhKeyboardLl, _callback, GetModuleHandle(module?.ModuleName), 0);
-        IsRunning = _hook != 0;
+        var moduleHandle = GetModuleHandle(module?.ModuleName);
+        _keyboardHook = SetKeyboardHook(WhKeyboardLl, _keyboardCallback, moduleHandle, 0);
+        _mouseHook = SetMouseHook(WhMouseLl, _mouseCallback, moduleHandle, 0);
+        IsRunning = _keyboardHook != 0 && _mouseHook != 0;
         _started?.Set();
-        if (_hook == 0)
+        if (!IsRunning)
         {
+            if (_keyboardHook != 0)
+            {
+                UnhookWindowsHookEx(_keyboardHook);
+                _keyboardHook = 0;
+            }
+            if (_mouseHook != 0)
+            {
+                UnhookWindowsHookEx(_mouseHook);
+                _mouseHook = 0;
+            }
             return;
         }
 
@@ -124,16 +154,18 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
             DispatchMessage(ref message);
         }
 
-        UnhookWindowsHookEx(_hook);
-        _hook = 0;
+        UnhookWindowsHookEx(_mouseHook);
+        UnhookWindowsHookEx(_keyboardHook);
+        _mouseHook = 0;
+        _keyboardHook = 0;
         IsRunning = false;
     }
 
-    private nint HookCallback(int code, nuint wParam, nint lParam)
+    private nint KeyboardHookCallback(int code, nuint wParam, nint lParam)
     {
         if (code < 0)
         {
-            return CallNextHookEx(_hook, code, wParam, lParam);
+            return CallNextHookEx(_keyboardHook, code, wParam, lParam);
         }
 
         var data = Marshal.PtrToStructure<Kbdllhookstruct>(lParam);
@@ -143,7 +175,7 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         if (WindowsKeyboardRoutePolicy.ShouldBypassInjectedEvent(
                 data.Flags, data.ExtraInfo, SelfInjectionMarker))
         {
-            return CallNextHookEx(_hook, code, wParam, lParam);
+            return CallNextHookEx(_keyboardHook, code, wParam, lParam);
         }
 
         var message = unchecked((int)wParam);
@@ -151,19 +183,67 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         var isUp = message is WmKeyUp or WmSysKeyUp;
         if (!isDown && !isUp)
         {
-            return CallNextHookEx(_hook, code, wParam, lParam);
+            return CallNextHookEx(_keyboardHook, code, wParam, lParam);
         }
+
+        return RouteInput(_keyboardHook, code, wParam, lParam,
+            data.VirtualKey, isDown, isUp, "windows:keyboard");
+    }
+
+    private nint MouseHookCallback(int code, nuint wParam, nint lParam)
+    {
+        if (code < 0)
+        {
+            return CallNextHookEx(_mouseHook, code, wParam, lParam);
+        }
+
+        var data = Marshal.PtrToStructure<Msllhookstruct>(lParam);
+        if ((data.Flags & LowLevelMouseInjectedFlag) != 0 && data.ExtraInfo == SelfInjectionMarker)
+        {
+            return CallNextHookEx(_mouseHook, code, wParam, lParam);
+        }
+
+        var message = unchecked((int)wParam);
+        var (virtualKey, isDown, isUp) = message switch
+        {
+            WmLeftButtonDown => (VirtualKeyNames.LeftMouseButton, true, false),
+            WmLeftButtonUp => (VirtualKeyNames.LeftMouseButton, false, true),
+            WmRightButtonDown => (VirtualKeyNames.RightMouseButton, true, false),
+            WmRightButtonUp => (VirtualKeyNames.RightMouseButton, false, true),
+            WmMiddleButtonDown => (VirtualKeyNames.MiddleMouseButton, true, false),
+            WmMiddleButtonUp => (VirtualKeyNames.MiddleMouseButton, false, true),
+            _ => (0u, false, false)
+        };
+        if (virtualKey == 0)
+        {
+            return CallNextHookEx(_mouseHook, code, wParam, lParam);
+        }
+
+        return RouteInput(_mouseHook, code, wParam, lParam,
+            virtualKey, isDown, isUp, "windows:mouse");
+    }
+
+    private nint RouteInput(
+        nint hook,
+        int code,
+        nuint wParam,
+        nint lParam,
+        uint virtualKey,
+        bool isDown,
+        bool isUp,
+        string deviceId)
+    {
 
         var state = isUp
             ? KeyEventState.Up
-            : _pressed.Add(data.VirtualKey) ? KeyEventState.Down : KeyEventState.Repeat;
+            : _pressed.Add(virtualKey) ? KeyEventState.Down : KeyEventState.Repeat;
         if (isUp)
         {
-            _pressed.Remove(data.VirtualKey);
+            _pressed.Remove(virtualKey);
         }
 
-        var keyName = VirtualKeyNames.ToName(data.VirtualKey);
-        var input = new KeyInputEvent(keyName, state, "windows:global", DateTimeOffset.UtcNow);
+        var keyName = VirtualKeyNames.ToName(virtualKey);
+        var input = new KeyInputEvent(keyName, state, deviceId, DateTimeOffset.UtcNow);
         try
         {
             var router = Router;
@@ -174,30 +254,30 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
             else
             {
                 var route = router(input);
-                var mappingActive = _mappedSources.ContainsKey(data.VirtualKey);
+                var mappingActive = _mappedSources.ContainsKey(virtualKey);
                 var decision = WindowsKeyboardRoutePolicy.Decide(route, input.Key, mappingActive);
                 if (decision.Action == WindowsKeyboardRouteAction.Map)
                 {
-                    if (ForwardMapped(data.VirtualKey, decision.TargetVirtualKey, state))
+                    if (ForwardMapped(virtualKey, decision.TargetVirtualKey, state))
                     {
-                        UpdateSuppression(data.VirtualKey, state);
+                        UpdateSuppression(virtualKey, state);
                         return 1;
                     }
                     // If Windows rejects SendInput (for example, a higher-integrity
                     // foreground app), never turn the physical source into a dead key.
                 }
 
-                if (state == KeyEventState.Repeat && _suppressedSources.Contains(data.VirtualKey))
+                if (state == KeyEventState.Repeat && _suppressedSources.Contains(virtualKey))
                 {
                     return 1;
                 }
-                if (state == KeyEventState.Up && _suppressedSources.Remove(data.VirtualKey))
+                if (state == KeyEventState.Up && _suppressedSources.Remove(virtualKey))
                 {
                     return 1;
                 }
 
                 if (decision.Action == WindowsKeyboardRouteAction.Suppress
-                    && ShouldSuppress(data.VirtualKey, state))
+                    && ShouldSuppress(virtualKey, state))
                 {
                     return 1;
                 }
@@ -208,15 +288,15 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
             // A plugin or UI failure must never trap an injected modifier in
             // the down state.  The source-to-target association is recorded on
             // key-down, so key-up can always release it without routing again.
-            if (state == KeyEventState.Up && _mappedSources.ContainsKey(data.VirtualKey))
+            if (state == KeyEventState.Up && _mappedSources.ContainsKey(virtualKey))
             {
-                _ = ForwardMapped(data.VirtualKey, 0, KeyEventState.Up);
-                _suppressedSources.Remove(data.VirtualKey);
+                _ = ForwardMapped(virtualKey, 0, KeyEventState.Up);
+                _suppressedSources.Remove(virtualKey);
                 return 1;
             }
         }
 
-        return CallNextHookEx(_hook, code, wParam, lParam);
+        return CallNextHookEx(hook, code, wParam, lParam);
     }
 
     private bool ShouldSuppress(uint source, KeyEventState state)
@@ -250,7 +330,7 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         if (state == KeyEventState.Down)
         {
             _mappedTargetReferences.TryGetValue(target, out var references);
-            if (references == 0 && !SendKey(target, false))
+            if (references == 0 && !SendVirtualInput(target, false))
             {
                 return false;
             }
@@ -267,7 +347,7 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         {
             if (_mappedSources.TryGetValue(source, out var repeatTarget))
             {
-                return SendKey(repeatTarget, false);
+                return SendVirtualInput(repeatTarget, false);
             }
             return false;
         }
@@ -277,7 +357,7 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
             if (references <= 1)
             {
                 _mappedTargetReferences.Remove(releaseTarget);
-                if (SendKey(releaseTarget, true))
+                if (SendVirtualInput(releaseTarget, true))
                 {
                     _injectedTargets.Remove(releaseTarget);
                 }
@@ -294,7 +374,7 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
     {
         foreach (var target in _mappedTargetReferences.Keys.Concat(_injectedTargets).Distinct().ToArray())
         {
-            _ = SendKey(target, true);
+            _ = SendVirtualInput(target, true);
         }
         _mappedSources.Clear();
         _mappedTargetReferences.Clear();
@@ -322,6 +402,46 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         return SendInput(1, inputs, Marshal.SizeOf<NativeInput>()) == 1;
     }
 
+    private static bool SendVirtualInput(uint virtualKey, bool isUp)
+        => VirtualKeyNames.IsMouseButton(virtualKey)
+            ? SendMouseButton(virtualKey, isUp)
+            : SendKey(virtualKey, isUp);
+
+    private static bool SendMouseButton(uint virtualKey, bool isUp)
+    {
+        var flags = (virtualKey, isUp) switch
+        {
+            (VirtualKeyNames.LeftMouseButton, false) => MouseeventfLeftdown,
+            (VirtualKeyNames.LeftMouseButton, true) => MouseeventfLeftup,
+            (VirtualKeyNames.RightMouseButton, false) => MouseeventfRightdown,
+            (VirtualKeyNames.RightMouseButton, true) => MouseeventfRightup,
+            (VirtualKeyNames.MiddleMouseButton, false) => MouseeventfMiddledown,
+            (VirtualKeyNames.MiddleMouseButton, true) => MouseeventfMiddleup,
+            _ => 0u
+        };
+        if (flags == 0)
+        {
+            return false;
+        }
+
+        var inputs = new[]
+        {
+            new NativeInput
+            {
+                Type = InputMouse,
+                Union = new InputUnion
+                {
+                    Mouse = new MouseInput
+                    {
+                        Flags = flags,
+                        ExtraInfo = SelfInjectionMarker
+                    }
+                }
+            }
+        };
+        return SendInput(1, inputs, Marshal.SizeOf<NativeInput>()) == 1;
+    }
+
     public void Dispose()
     {
         Stop();
@@ -329,12 +449,24 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
     }
 
     private delegate nint LowLevelKeyboardProc(int code, nuint wParam, nint lParam);
+    private delegate nint LowLevelMouseProc(int code, nuint wParam, nint lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Kbdllhookstruct
     {
         public uint VirtualKey;
         public uint ScanCode;
+        public uint Flags;
+        public uint Time;
+        public nuint ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Msllhookstruct
+    {
+        public int PointX;
+        public int PointY;
+        public uint MouseData;
         public uint Flags;
         public uint Time;
         public nuint ExtraInfo;
@@ -392,8 +524,12 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
         public nuint ExtraInfo;
     }
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern nint SetWindowsHookEx(int idHook, LowLevelKeyboardProc callback, nint module, uint threadId);
+    [DllImport("user32.dll", EntryPoint = "SetWindowsHookExW", SetLastError = true)]
+    private static extern nint SetKeyboardHook(
+        int idHook, LowLevelKeyboardProc callback, nint module, uint threadId);
+    [DllImport("user32.dll", EntryPoint = "SetWindowsHookExW", SetLastError = true)]
+    private static extern nint SetMouseHook(
+        int idHook, LowLevelMouseProc callback, nint module, uint threadId);
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool UnhookWindowsHookEx(nint hook);
     [DllImport("user32.dll")]
@@ -416,8 +552,14 @@ public sealed class WindowsGlobalKeyboardSource : IRoutingInputSource
 
 public static class VirtualKeyNames
 {
+    public const uint LeftMouseButton = 0x01;
+    public const uint RightMouseButton = 0x02;
+    public const uint MiddleMouseButton = 0x04;
+
     private static readonly Dictionary<uint, string> Names = new()
     {
+        [LeftMouseButton] = "mouseleft", [RightMouseButton] = "mouseright",
+        [MiddleMouseButton] = "mousemiddle",
         [0x08] = "backspace", [0x09] = "tab", [0x0D] = "enter", [0x10] = "shift",
         [0x11] = "ctrl", [0x12] = "alt", [0x13] = "pause", [0x14] = "capslock",
         [0x1B] = "esc", [0x20] = "space", [0x21] = "pageup", [0x22] = "pagedown",
@@ -458,6 +600,9 @@ public static class VirtualKeyNames
 
         return Names.TryGetValue(virtualKey, out var name) ? name : $"vk_{virtualKey:x2}";
     }
+
+    public static bool IsMouseButton(uint virtualKey)
+        => virtualKey is LeftMouseButton or RightMouseButton or MiddleMouseButton;
 
     public static uint ToVirtualKey(string? name)
     {

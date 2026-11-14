@@ -9,7 +9,7 @@
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-KeyViewer 可以在后台读取实体键盘输入，把按键状态、每键计数、KPS、TOTAL 和键雨渲染到编辑画布或透明悬浮窗。Windows、Android 与 Linux 共用同一套 Avalonia UI、配置模型和输入路由；各平台只保留必要的底层输入与悬浮窗实现差异。
+KeyViewer 可以在后台读取实体键盘与鼠标按键输入，把按键状态、每键计数、KPS、TOTAL 和键雨渲染到编辑画布或透明悬浮窗。Windows、Android 与 Linux 共用同一套 Avalonia UI、配置模型和输入路由；各平台只保留必要的底层输入与悬浮窗实现差异。
 
 ![KeyViewer Android 界面](Screenshot_20260423-012854_KeyViewer.png)
 
@@ -17,7 +17,7 @@ KeyViewer 可以在后台读取实体键盘输入，把按键状态、每键计�
 
 | 平台 | 发布包 | 输入后端 | 当前状态 |
 | --- | --- | --- | --- |
-| Windows 10/11 x64 | `KeyViewer-Windows-x64` 目录包 | 全局低级键盘钩子 | 主要支持平台；普通 .NET 目录结构与外置 BepInEx 模组框架，支持后台监听、拦截与映射 |
+| Windows 10/11 x64 | `KeyViewer-Windows-x64` 目录包 | 全局低级键盘/鼠标钩子 | 主要支持平台；普通 .NET 目录结构与外置 BepInEx 模组框架，支持后台监听、拦截与映射 |
 | Android 7.0+ arm64 | `KeyViewer-Android-arm64.apk` | 无障碍（默认）/ Shizuku / Root-Sui | 默认免配对显示实体键盘、计数、KPS 与键雨；Shizuku 或 UID 0 的 Sui 后端提供拦截与映射 |
 | Android x86_64 | `KeyViewer-Android-x86_64.apk` | 同上 | 用于 x86_64 模拟器，不适用于普通 ARM 手机 |
 | Linux x64 | `KeyViewer-Linux-x64.tar.gz` | `evdev` + `uinput` | 实验性支持；需要 `/dev/input` 读取权限，拦截/映射还需要 `/dev/uinput` 写入权限 |
@@ -55,7 +55,7 @@ Android 三种后端的能力边界如下：
 - 内置 ADOFAI、MapleStory Bold 与系统字体选择；也可把 OTF/TTF 字体导入配置。
 - 支持 PNG、JPEG、WebP、GIF 按键图片，并可选择图片是否取代键名。
 - KPS/TOTAL 支持单行/换行、文字与数值独立样式、全大写/首字母大写/全小写。
-- 全局面板可启用外置“液态玻璃按键”模组：Windows 11 悬浮窗通过 `HostBackdrop → CompositionVisualSurface` 取得桌面、游戏或其他窗口的真实后方像素，再以多层凸透镜位移、玻璃边缘、高光、软阴影和按压形变重新合成每个按键；它不会拿 KeyViewer 自己已绘制的画布假装折射。文字与图片仍由 Avalonia 独立绘制并保持锐利。此模式会增加 GPU 合成负载，关闭后不建立按键透镜。
+- Windows 可把左键、右键和中键作为普通 KV 按键绑定、显示、计数与映射；进入绑定后，下一次鼠标按下直接完成绑定，之后立即恢复普通点击。
 
 ### 键雨与统计
 
@@ -101,7 +101,6 @@ Android 三种后端的能力边界如下：
 - `KeyViewer.Abstractions`：稳定的小型输入事件、过滤器与插件接口层，目标框架为 `netstandard2.0`。
 - `KeyViewer.SamplePlugin`：最小输入过滤器示例。
 - `KeyViewer.ModFramework`：从程序同级 `BepInEx/patchers` 与 `BepInEx/plugins` 发现、隔离加载和安全卸载模组；框架 DLL 位于 `BepInEx/core`，不会编译进 EXE。Windows 包的普通托管依赖统一放在 `Managed`，Skia/HarfBuzz 等原生依赖放在 `Native`。
-- `KeyViewer.LiquidGlassPlugin`：首个视觉模组，通过平台无关的按键表面样式接口改变全部按键渲染。
 - `KeyViewer.BepInExBridge`：通过命名管道把游戏内事件送到桌面端；其他模组可调用 `KeyViewerBridge.PublishKey()`。
 - 普通模组放入程序旁 `BepInEx/plugins`，预加载补丁放入 `BepInEx/patchers`；用户数据目录中的 `Plugins` 仍作为个人模组目录读取。
 

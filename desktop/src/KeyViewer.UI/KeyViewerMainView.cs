@@ -1964,10 +1964,10 @@ public sealed partial class KeyViewerMainView : UserControl
         _captureButton = button;
         _captureAction = update;
         _captureOriginal = original;
-        button.Content = "请按一个实体键…";
+        button.Content = "请按键或点击鼠标…";
         button.Background = new SolidColorBrush(Color.Parse("#FF9800"));
         button.Foreground = Brushes.White;
-        _statusText.Text = "正在绑定：请按一个实体键（再次点击可取消）";
+        _statusText.Text = "正在绑定：下一次键盘或鼠标按下将直接绑定（Esc 取消）";
     }
 
     private void CancelKeyCapture()
@@ -1982,25 +1982,46 @@ public sealed partial class KeyViewerMainView : UserControl
         }
 
         _captureButton = null;
-        _captureAction = null;
+        Interlocked.Exchange(ref _captureAction, null);
         _captureOriginal = string.Empty;
     }
 
     private void OnRoutedForBinding(KeyRouteContext route)
     {
-        if (_captureAction is null || route.Input.State != KeyEventState.Down)
+        if (route.Input.State != KeyEventState.Down)
+        {
+            return;
+        }
+
+        var action = Interlocked.Exchange(ref _captureAction, null);
+        if (action is null)
         {
             return;
         }
 
         var keyName = KeyViewer.Core.KeyNames.Normalize(route.Input.Key);
+        var button = _captureButton;
+        var original = _captureOriginal;
+        _captureButton = null;
+        _captureOriginal = string.Empty;
+        route.ForwardToSystem = false;
+        route.StopProcessing = true;
+        route.OutputKey = keyName;
+        route.Reason = "binding-capture";
         Dispatcher.UIThread.Post(() =>
         {
-            var action = _captureAction;
-            var button = _captureButton;
-            _captureAction = null;
-            _captureButton = null;
-            _captureOriginal = string.Empty;
+            if (KeyViewer.Core.KeyNames.Equals(keyName, "esc"))
+            {
+                if (button is not null)
+                {
+                    button.Content = string.IsNullOrWhiteSpace(original) ? "点击后按键" : original;
+                    button.ClearValue(Button.BackgroundProperty);
+                    button.ClearValue(Button.ForegroundProperty);
+                }
+                _statusText.Text = "已取消绑定";
+                return;
+            }
+
             action?.Invoke(keyName);
             if (button is not null)
             {

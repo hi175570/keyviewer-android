@@ -132,6 +132,12 @@ public sealed class InputRouterTests
     [InlineData("rbracket", "bracketright")]
     [InlineData("lwin", "lmeta")]
     [InlineData("rwin", "rmeta")]
+    [InlineData("mouse1", "mouseleft")]
+    [InlineData("lbutton", "mouseleft")]
+    [InlineData("mouse2", "mouseright")]
+    [InlineData("rbutton", "mouseright")]
+    [InlineData("mouse3", "mousemiddle")]
+    [InlineData("mbutton", "mousemiddle")]
     public void Desktop_aliases_use_Android_key_names(string desktopName, string androidName)
     {
         Assert.Equal(androidName, KeyNames.Normalize(desktopName));
@@ -140,6 +146,9 @@ public sealed class InputRouterTests
 
     [Theory]
     [InlineData(0x08u, "backspace")]
+    [InlineData(0x01u, "mouseleft")]
+    [InlineData(0x02u, "mouseright")]
+    [InlineData(0x04u, "mousemiddle")]
     [InlineData(0x2Eu, "del")]
     [InlineData(0x5Bu, "lmeta")]
     [InlineData(0x5Cu, "rmeta")]

@@ -20,6 +20,9 @@ public sealed class WindowsGlobalKeyboardSourceTests
             .ToHashSet(StringComparer.Ordinal);
         Assert.Contains("SendInput", methodNames);
         Assert.Contains("SendKey", methodNames);
+        Assert.Contains("SendMouseButton", methodNames);
+        Assert.Contains("SendVirtualInput", methodNames);
+        Assert.Contains("MouseHookCallback", methodNames);
         Assert.Contains("ForwardMapped", methodNames);
     }
 
@@ -65,6 +68,21 @@ public sealed class WindowsGlobalKeyboardSourceTests
 
         Assert.Equal(WindowsKeyboardRouteAction.Suppress,
             WindowsKeyboardRoutePolicy.Decide(restricted, "x").Action);
+    }
+
+    [Theory]
+    [InlineData("mouseleft", 0x01u)]
+    [InlineData("mouseright", 0x02u)]
+    [InlineData("mousemiddle", 0x04u)]
+    public void Mapping_can_target_mouse_buttons(string target, uint expectedVirtualKey)
+    {
+        var route = Context("f", target, false, "mapped");
+
+        var mapping = WindowsKeyboardRoutePolicy.Decide(route, "f");
+
+        Assert.Equal(WindowsKeyboardRouteAction.Map, mapping.Action);
+        Assert.Equal(expectedVirtualKey, mapping.TargetVirtualKey);
+        Assert.True(VirtualKeyNames.IsMouseButton(mapping.TargetVirtualKey));
     }
 
     [Fact]

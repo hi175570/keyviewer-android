@@ -32,7 +32,8 @@ public sealed class KeyCanvasControl : Control, IDisposable
         ["lalt"] = "L Alt", ["ralt"] = "R Alt", ["space"] = "⎵", ["enter"] = "⏎",
         ["capslock"] = "⇪", ["del"] = "del", ["pageup"] = "pg⇑", ["pagedown"] = "pg⇓",
         ["home"] = "home", ["end"] = "end", ["up"] = "↑", ["down"] = "↓",
-        ["left"] = "←", ["right"] = "→", ["esc"] = "Esc", ["lmeta"] = "Win", ["rmeta"] = "Win"
+        ["left"] = "←", ["right"] = "→", ["esc"] = "Esc", ["lmeta"] = "Win", ["rmeta"] = "Win",
+        ["mouseleft"] = "LMB", ["mouseright"] = "RMB", ["mousemiddle"] = "MMB"
     };
     private readonly Dictionary<string, Bitmap?> _images = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, FontFamily?> _fonts = new(StringComparer.OrdinalIgnoreCase);

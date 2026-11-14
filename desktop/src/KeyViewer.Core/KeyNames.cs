@@ -34,6 +34,18 @@ public static class KeyNames
         ["rightwindows"] = "rmeta",
         ["leftmeta"] = "lmeta",
         ["rightmeta"] = "rmeta",
+        ["mouse1"] = "mouseleft",
+        ["lbutton"] = "mouseleft",
+        ["leftmouse"] = "mouseleft",
+        ["leftclick"] = "mouseleft",
+        ["mouse2"] = "mouseright",
+        ["rbutton"] = "mouseright",
+        ["rightmouse"] = "mouseright",
+        ["rightclick"] = "mouseright",
+        ["mouse3"] = "mousemiddle",
+        ["mbutton"] = "mousemiddle",
+        ["middlemouse"] = "mousemiddle",
+        ["middleclick"] = "mousemiddle",
         [" "] = "space"
     };
 
