@@ -378,26 +378,7 @@ public sealed partial class KeyViewerMainView : UserControl
         };
         stack.Children.Add(dark);
 
-        stack.Children.Add(Section("渲染模组"));
-        const string liquidGlassEffectId = "io.keyviewer.liquid-glass";
-        var liquidGlassAvailable = _host.SurfaceEffects.EffectIds.Contains(
-            liquidGlassEffectId,
-            StringComparer.OrdinalIgnoreCase);
-        var liquidGlass = new ToggleSwitch
-        {
-            Content = "液态玻璃按键",
-            IsChecked = settings.LiquidGlassEnabled,
-            IsEnabled = liquidGlassAvailable
-        };
-        liquidGlass.IsCheckedChanged += (_, _) =>
-        {
-            settings.LiquidGlassEnabled = liquidGlass.IsChecked == true && liquidGlassAvailable;
-            _host.NotifyEdited();
-        };
-        stack.Children.Add(liquidGlass);
-        stack.Children.Add(Hint(liquidGlassAvailable
-            ? "已由独立模组提供：Windows 悬浮窗直接采样桌面或游戏的真实后方画面，再以多层凸透镜位移、玻璃边缘、高光、软阴影和按压形变重新合成。不是折射 KV 自己的画布；此模式会增加 GPU 合成负载。"
-            : "液态玻璃模组未加载。请检查程序旁 BepInEx/plugins 目录。"));
+        stack.Children.Add(Section("模组"));
         foreach (var plugin in _host.PluginHost.Plugins)
         {
             stack.Children.Add(Hint(plugin.IsLoaded

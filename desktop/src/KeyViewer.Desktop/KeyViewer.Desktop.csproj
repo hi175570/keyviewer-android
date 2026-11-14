@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>KeyViewer.Desktop</AssemblyName>
     <RootNamespace>KeyViewer.Desktop</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -10,12 +10,6 @@
          plugins must remain replaceable files beside the executable. -->
     <PublishSingleFile>false</PublishSingleFile>
   </PropertyGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <Compile Remove="WindowsLiquidGlassCompositionHost.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
-    <Compile Remove="WindowsLiquidGlassCompositionHost.Stub.cs" />
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.0" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
@@ -35,7 +29,7 @@
   </ItemGroup>
   <Target Name="CreateModFrameworkLayout"
           AfterTargets="Publish"
-          Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
+          Condition="'$(RuntimeIdentifier)' == 'win-x64'">
     <PropertyGroup>
       <ManagedPublishRoot>$(PublishDir)Managed\</ManagedPublishRoot>
       <NativePublishRoot>$(PublishDir)Native\</NativePublishRoot>

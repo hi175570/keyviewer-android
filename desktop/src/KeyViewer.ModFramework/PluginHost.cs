@@ -209,15 +209,6 @@ public sealed class PluginHost : IDisposable
             return registration;
         }
 
-        public IDisposable RegisterKeySurfaceEffect(IKeySurfaceEffect effect)
-        {
-            var registry = services.Get(typeof(IKeySurfaceEffectRegistry)) as IKeySurfaceEffectRegistry
-                ?? throw new InvalidOperationException("主程序没有提供按键表面渲染服务");
-            var registration = registry.Register(effect);
-            registrations.Add(registration);
-            return registration;
-        }
-
         public IDisposable SubscribeRoutedInput(Action<KeyRouteContext> handler)
         {
             router.Routed += handler;

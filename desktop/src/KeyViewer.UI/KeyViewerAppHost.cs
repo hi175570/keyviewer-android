@@ -58,9 +58,6 @@ public sealed class KeyViewerAppHost : IDisposable
         Services.Add(typeof(KeyViewerDocument), Document);
         Services.Add(typeof(InputRouter), Router);
         Services.Add(typeof(KeyStateService), State);
-        SurfaceEffects = new KeySurfaceEffectRegistry();
-        Services.Add(typeof(IKeySurfaceEffectRegistry), SurfaceEffects);
-        Services.Add(typeof(KeySurfaceEffectRegistry), SurfaceEffects);
         PluginHost = new PluginHost(Router, Services, Path.Combine(DataRoot, "PluginData"), Log);
         _saveTimer = new Timer(_ => SaveNowSafe(), null, Timeout.Infinite, Timeout.Infinite);
         // Loading and serializing a portable configuration can include embedded fonts and images.
@@ -99,7 +96,6 @@ public sealed class KeyViewerAppHost : IDisposable
     public KeyStateService State { get; }
     public KeyViewerRuntime Runtime { get; }
     public ServiceRegistry Services { get; }
-    public KeySurfaceEffectRegistry SurfaceEffects { get; }
     public PluginHost PluginHost { get; }
     public event Action? Changed;
     public event Action<string>? LogMessage;

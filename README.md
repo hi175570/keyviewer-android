@@ -104,7 +104,7 @@ Android 三种后端的能力边界如下：
 - `KeyViewer.BepInExBridge`：通过命名管道把游戏内事件送到桌面端；其他模组可调用 `KeyViewerBridge.PublishKey()`。
 - 普通模组放入程序旁 `BepInEx/plugins`，预加载补丁放入 `BepInEx/patchers`；用户数据目录中的 `Plugins` 仍作为个人模组目录读取。
 
-模组 API `1.0` 当前支持输入过滤、路由事件、主程序服务与声明式按键表面渲染。视觉模组只返回平台无关材质参数，因此不会把 Avalonia 或 Windows API 强塞进模组接口；Windows 11 悬浮窗可把这些参数交给原生外部背景合成器，其他平台会安全回退到普通按键渲染。
+模组 API `1.0` 当前支持输入过滤、路由事件与主程序服务。视觉改造应由外置模组自行补丁实现，原版不包含任何特定视觉模组的渲染宿主。
 
 ## 安装与首次使用
 
@@ -237,7 +237,6 @@ dotnet publish $androidProject -c Release -r android-x64 --no-restore `
    ├─ src/KeyViewer.Desktop      # Windows/Linux 桌面入口和悬浮窗
    ├─ src/KeyViewer.Android      # Avalonia Android 入口和悬浮窗服务
    ├─ src/KeyViewer.ModFramework # 外置模组加载器与服务注册表
-   ├─ src/KeyViewer.LiquidGlassPlugin # 液态玻璃按键视觉模组
    ├─ src/KeyViewer.BepInExBridge
    ├─ src/KeyViewer.SamplePlugin
    └─ tests/KeyViewer.Core.Tests
